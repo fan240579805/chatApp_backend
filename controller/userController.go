@@ -28,9 +28,13 @@ func PostRegister(c *gin.Context) {
 	fmt.Println(u1)
 	err := model.AddUser(*u1)
 	if err != nil {
+		fmt.Println(err.Error())
 		//注册失败，用户名或密码或电话号码重复
 		//返回错误代码用这个http.StatusUnprocessableEntity=422才能使得前端axios catch到err
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"Err": err.Error()})
+		c.JSON(http.StatusOK, gin.H{
+			"code": "422",
+			"msg":  err.Error(),
+		})
 		return
 	} else {
 		//注册成功

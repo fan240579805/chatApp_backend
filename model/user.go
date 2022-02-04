@@ -53,17 +53,18 @@ func MakeChatList(db *gorm.DB) (string, error) {
 }
 
 func checkUser(user *User) error {
-	var compareUser User
-	selectEmailErr := dao.DB.Where("email=?", user.Email).First(&compareUser).Error
-	UserNameErr := dao.DB.Where("username=?", user.Username).First(&compareUser).Error
-	if selectEmailErr != nil && UserNameErr != nil {
-		return errors.New("邮箱和账号都已被注册")
-	} else if selectEmailErr != nil && UserNameErr == nil {
+	var compareUserName User
+	var compareEmail User
+	dao.DB.Where("email=?", user.Email).First(&compareEmail)
+	dao.DB.Where("username=?", user.Username).First(&compareUserName)
+	if compareUserName.UserID == "" && compareEmail.UserID == "" {
+		return nil
+	} else if compareUserName.UserID == "" && compareEmail.UserID != "" {
 		return errors.New("邮箱已被注册")
-	} else if selectEmailErr == nil && UserNameErr != nil {
+	} else if compareUserName.UserID != "" && compareEmail.UserID == "" {
 		return errors.New("账号已被注册")
 	} else {
-		return nil
+		return errors.New("账号和邮箱都已被注册")
 	}
 }
 
