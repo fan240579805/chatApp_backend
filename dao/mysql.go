@@ -9,7 +9,6 @@ var(
 
 
 func InitMysql() (err error){
-
 	dsn:="root:123456@(127.0.0.1:3306)/chat?charset=utf8mb4&parseTime=True&loc=Local"
 	DB,err=gorm.Open("mysql",dsn)
 	if err != nil {

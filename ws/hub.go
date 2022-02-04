@@ -4,7 +4,6 @@ import (
 	"chatApp/model"
 	"encoding/json"
 	"log"
-
 )
 
 type ClientManger struct {

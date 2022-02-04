@@ -39,7 +39,7 @@ func GetChat(c * gin.Context)  {
 	})
 }
 
-func SaveImg( c *gin.Context)  {
+func asdSaveImg( c *gin.Context)  {
 	f,err:=c.FormFile("file")
 	if err != nil {
 		fmt.Println(err)
@@ -63,8 +63,4 @@ func SaveImg( c *gin.Context)  {
 	}
 }
 
-//展示图片接口
-func ShowChatImage(c *gin.Context){
-	imageName := c.Query("imageName")
-	c.File(imageName)
-}
+

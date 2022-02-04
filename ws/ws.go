@@ -18,18 +18,16 @@ type Client struct {
 	//UserInfo model.User
 }
 
-
-
-func WsHandler(c *gin.Context)  {
-	uid:=c.Query("uid")
+func WsHandler(c *gin.Context) {
+	uid := c.Query("uid")
 	//to_uid:=c.Query("to_uid")
 
 	// ws升级器
-	ws,err:=(&websocket.Upgrader{
-		ReadBufferSize:    1024,
-		WriteBufferSize:   1024,
-		CheckOrigin: func(r *http.Request) bool {return true},
-	}).Upgrade(c.Writer,c.Request,nil)
+	ws, err := (&websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+		CheckOrigin:     func(r *http.Request) bool { return true },
+	}).Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -40,7 +38,7 @@ func WsHandler(c *gin.Context)  {
 	client := &Client{
 		ID:     createId(uid),
 		Socket: ws,
-		Send:   make(chan []byte,256),
+		Send:   make(chan []byte, 256),
 		//UserInfo: u1,
 	}
 	Manager.Register <- client
@@ -48,17 +46,17 @@ func WsHandler(c *gin.Context)  {
 	go client.Write()
 }
 
-func (c *Client) Read()  {
+func (c *Client) Read() {
 	// 延迟关闭客户端连接
 	defer func() {
-		Manager.UnRegister<-c
+		Manager.UnRegister <- c
 		c.Socket.Close()
 	}()
 	// 不断从连接中读取message
 	for {
-		_,message,err:=c.Socket.ReadMessage()
+		_, message, err := c.Socket.ReadMessage()
 		if err != nil {
-			Manager.UnRegister<-c
+			Manager.UnRegister <- c
 			c.Socket.Close()
 			break
 		}
@@ -66,46 +64,46 @@ func (c *Client) Read()  {
 
 		// 将发送时间赋给message
 		var m1 model.Message
-		json.Unmarshal(message,&m1)
+		json.Unmarshal(message, &m1)
 		m1.SendTime = time.Now().Unix()
 
 		if m1.Type == "img" {
 			m1.Image = model.ImgUrl
 		}
 
-		message1,_:=json.Marshal(&m1)
+		message1, _ := json.Marshal(&m1)
 
 		// 发给自身
-		c.Send <-message1
+		c.Send <- message1
 
 		// 存入数据库
-		msg:= model.Message{}
-		json.Unmarshal(message1,&msg)
-		err=model.AddMessageRecord(msg)
+		msg := model.Message{}
+		json.Unmarshal(message1, &msg)
+		err = model.AddMessageRecord(msg)
 		if err != nil {
 			log.Println(err)
 		}
 
-		Manager.Broadcast<-message1
+		Manager.Broadcast <- message1
 	}
 }
 
-func (c *Client) Write()  {
+func (c *Client) Write() {
 	// 延迟关闭客户端连接
 	defer func() {
-		Manager.UnRegister<-c
+		Manager.UnRegister <- c
 		c.Socket.Close()
 	}()
-	for  {
+	for {
 		select {
-			case message,ok:=<-c.Send:
-					if !ok {
-						c.Socket.WriteMessage(websocket.CloseMessage, []byte{})
-						return
-					}
-					log.Printf("发送到到客户端的信息:%s", string(message))
+		case message, ok := <-c.Send:
+			if !ok {
+				c.Socket.WriteMessage(websocket.CloseMessage, []byte{})
+				return
+			}
+			log.Printf("发送到到客户端的信息:%s", string(message))
 
-					c.Socket.WriteMessage(websocket.TextMessage, message)
+			c.Socket.WriteMessage(websocket.TextMessage, message)
 		}
 	}
 }

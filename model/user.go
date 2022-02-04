@@ -2,134 +2,163 @@ package model
 
 import (
 	"chatApp/dao"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"github.com/jinzhu/gorm"
+	"time"
 )
 
-var ImgUrl  string
+var ImgUrl string
 
-type User struct{
-	ID  int                 `form:"id"             gorm:"unique;not null"`
-	Name string				`form:"name"           gorm:"unique"`
-	Email string			`form:"email"          gorm:"unique;not null"`
-	Password string			`form:"password"       gorm:"not null"`
-	Telephone string		`form:"telephone"      gorm:"unique;not null" `
-	Role string
-	State bool
-	IsTip bool
+type User struct {
+	ID         int       `gorm:"column:id;unique;not null;primary_key;AUTO_INCREMENT"`
+	UserID     string    `gorm:"column:userid;unique;not null"`
+	Username   string    `gorm:"column:username;unique"`
+	Password   string    `gorm:"column:password;not null"`
+	Avatar     string    `gorm:"column:avatar;default:null"`
+	Email      string    `gorm:"column:email;default:null"`
+	NickName   string    `gorm:"column:nickname"`
+	ChatList   string    `gorm:"column:chatlist"`
+	CreateTime time.Time `gorm:"column:createtime;default:null" json:"createtime"`
+	UpdateTime time.Time `gorm:"column:updatetime;default:null" json:"updatetime"`
 }
 
-type EditUser struct {
-	Name string
-	Telephone string
-	Email string
+type ChatList []string
+
+type ModifyAction struct {
+	InfoAttr  string
+	Playloads string
 }
 
-// 查询所有用户以及根据搜索结果查询用户
-func AllUsers(page int , contentSize int,search string) ([]User , int ,error) {
+func MakeChatList(db *gorm.DB) (string, error) {
+	var chats = &ChatList{"123", "123asdasds"}
+	bs, err := json.Marshal(chats)
+	user := &User{
+		ID:       0,
+		UserID:   "12312313asda",
+		Username: "asdasd",
+		Password: "123",
+		Avatar:   "asd",
+		NickName: "aaa",
+		ChatList: string(bs),
+	}
+	_ = db.Debug().Create(user).Error
+	fmt.Println("create user success")
+	if err != nil {
+		return "出错啦", err
+	} else {
+		return string(bs), nil
+	}
+}
 
+func checkUser(user *User) error {
+	var compareUser User
+	selectEmailErr := dao.DB.Where("email=?", user.Email).First(&compareUser).Error
+	UserNameErr := dao.DB.Where("username=?", user.Username).First(&compareUser).Error
+	if selectEmailErr != nil && UserNameErr != nil {
+		return errors.New("邮箱和账号都已被注册")
+	} else if selectEmailErr != nil && UserNameErr == nil {
+		return errors.New("邮箱已被注册")
+	} else if selectEmailErr == nil && UserNameErr != nil {
+		return errors.New("账号已被注册")
+	} else {
+		return nil
+	}
+}
+
+// AddUser 插入新用户到数据库,对userName，email去重
+func AddUser(user User) error {
+	checkErr := checkUser(&user)
+	if checkErr != nil {
+		return checkErr
+	}
+	err := dao.DB.Debug().Create(&user).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// SelectUser 根据id查询用户信息
+func SelectUser(id string) (User, error) {
+	var user User
+	err := dao.DB.Debug().Where("userid=?", id).Select("id,userid,username,nickname,avatar,email").First(&user).Error
+	if err != nil {
+		return user, err
+	}
+	return user, nil
+}
+
+// ModifyChatUserInfo 根据 id 查询出用户并更新相应信息; modifyAction-要更新的数据库字段命及参数
+// 更新chatList字段是前端回传json格式的数组就行
+func ModifyChatUserInfo(id string, action *ModifyAction) (User, error) {
+	var user User
+	err := dao.DB.Where("userid=?", id).First(&user).Error
+	if err != nil {
+		return user, err
+	}
+	err = dao.DB.Model(&user).Update(action.InfoAttr, action.Playloads).Error
+	if err != nil {
+		return user, err
+	}
+	return user, nil
+}
+
+// DeleteUser 根据id删除用户
+func DeleteUser(id string) error {
+	err := dao.DB.Where("userid=?", id).Delete(&User{}).Error
+	if err != nil {
+		return err
+	} else {
+		return nil
+	}
+}
+
+// GetUserChatList 获取聊天会话列表
+func GetUserChatList(id string) ([]Chat, error) {
+	var chatListJSON string
+	var chatList []Chat
+	err := dao.DB.Debug().Where("userid=", id).Select("chatlist").First(&chatListJSON).Error
+	// 将存入数据库的chatList JSON字符串解析为字节流
+	chatListBtyes, _ := json.Marshal(chatListJSON)
+	// 再将字节流反序列化成为chatList数据结构
+	json.Unmarshal(chatListBtyes, &chatList)
+	if err != nil {
+		return chatList, err
+	}
+	return chatList, nil
+}
+
+// findAllUsers 查询所有用户以及根据搜索结果查询用户
+func findAllUsers(page int, contentSize int, search string) ([]User, int, error) {
 	var users []User
 	var count int
 	var of int
 
 	// 偏移量= （页数-1）* 每一页的数据量
-	of = (page-1)*contentSize
+	of = (page - 1) * contentSize
 	// 搜索数据库
 	if search != "" {
-		err:=dao.DB.Debug().Where("name=?",search).Select("id,name, email,telephone,role,state").
+		err := dao.DB.Debug().Where("username=?", search).Select("id,userid,username,nickname,avatar").
 			Find(&users).Count(&count).Error
 		if err != nil {
-			return users , count ,err
-		}else {
-			return users , count ,nil
+			return users, count, err
+		} else {
+			return users, count, nil
 		}
-	}else { // 搜索框没有东西
+	} else { // 搜索框没有东西
 
 		// 总用户数量
 		dao.DB.Find(&users).Count(&count)
 
-		err:=dao.DB.Debug().Select("id,name, email,telephone,role,state").
+		err := dao.DB.Debug().Select("id,name, email,telephone,role,state").
 			Offset(of).Limit(contentSize).Find(&users).Error
 		if err != nil {
-			return users , 0 , err
-		}else {
-			return users , count , nil
+			return users, 0, err
+		} else {
+			return users, count, nil
 		}
 	}
 
-}
-
-// 更新用户状态
-func DbUpdateUserState(id int,state bool) (User , error) {
-	var user User
-	err:=dao.DB.Where("id=?",id).First(&user).Error
-	if err != nil {
-		return user,err
-	}else {
-		err:=dao.DB.Debug().Model(&user).Update("state",state).Error
-		if err != nil {
-			return user,err
-		}
-		return user,nil
-	}
-}
-
-// 根据id查询套更新的用户信息
-func SelectEditUser(id int) (User,error)  {
-	var user User
-	err:=dao.DB.Where("id=?",id).Select("id,name,email,telephone").First(&user).Error
-	if err != nil {
-		return user,err
-	}
-	return user,nil
-}
-
-// 根据id更新要更新的用户
-func DbUpdateUser(id int, editUser EditUser) (User , error) {
-
-	var u User
-	err:=dao.DB.Where("id=?",id).First(&u).Error
-	if err != nil {
-		return u,err
-	}else {
-		err:=dao.DB.Debug().Model(&u).
-			Updates(map[string]interface{}{"email":editUser.Email,"telephone":editUser.Telephone}).Error
-		if err != nil {
-			return u,err
-		}
-		return u,nil
-	}
-}
-
-// 根据id删除用户
-func DeleteUser(id int) error {
-	err:=dao.DB.Where("id=?",id).Delete(&User{}).Error
-	if err != nil {
-		return err
-	}else {
-		return nil
-	}
-}
-
-
-// 请求聊天用户列表
-func GetUserChatList() ([]User,error) {
-	var u1 []User
-	err:=dao.DB.Select("id,name,state,is_tip").Find(&u1).Error
-	if err != nil {
-		return u1,err
-	}
-	return u1,nil
-}
-
-// 根据 id 查询 更新聊天用户的 已读未读状态
-func ModifyChatUserState(id int, tipState bool) ( error ) {
-	var user User
-	err:=dao.DB.Where("id=?",id).First(&user).Error
-	if err != nil {
-		return err
-	}
-	err=dao.DB.Model(&user).Update("is_tip",tipState).Error
-	if err != nil {
-		return err
-	}
-	return nil
 }

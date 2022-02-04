@@ -2,24 +2,23 @@ package model
 
 import (
 	"chatApp/dao"
+	"time"
 )
 
 // Message is return msg
 type Message struct {
-	Sender    string `json:"sender"`
-	Recipient string `json:"recipient"`
-	Content   string `json:"content"`
-	Unread    bool   `json:"unread"`
-	FromUser  string `json:"fromUser"`
-	ToUser    string `json:"toUser"`
-	SendTime  int64  `json:"time"`
-	Image     string `json:"image"`
-	Type      string `json:"type"`
+	ID         int       `gorm:"column:id;unique;not null;primary_key;AUTO_INCREMENT"`
+	MsgID      int       `gorm:"column:msgid;unique;not null;"`
+	Sender     string    `json:"sender"`    //  发送者唯一id
+	Recipient  string    `json:"recipient"` //	接收者唯一id
+	Content    string    `json:"content"`
+	SendTime   int64     `json:"time"`
+	Type       string    `json:"type"` //消息类型 img: 图片 text: 文本 audio: 音频
+	CreateTime time.Time `gorm:"column:createtime;default:null" json:"createtime"`
 }
-
+//	AddMessageRecord 往聊天记录表添加记录
 func AddMessageRecord(msg Message) error {
-
-	err:=dao.DB.Create(&msg).Error
+	err := dao.DB.Create(&msg).Error
 	if err != nil {
 		return err
 	}
@@ -33,19 +32,19 @@ func ModifyMsgState(msgFrom string, msgTo string) error {
 	//dao.DB.Debug().Where("sender=? AND recipient =? ",msgFrom,msgTo).Find(&m1)
 	//fmt.Println("m1",m1)
 
-	err:=dao.DB.Debug().Model(&Message{}).Where("sender=? AND recipient =? ",msgFrom,msgTo).Update("unread",true).Error
+	err := dao.DB.Debug().Model(&Message{}).Where("sender=? AND recipient =? ", msgFrom, msgTo).Update("unread", true).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func GetChatContent() ([]Message,error) {
-	var m1  []Message
-	err:=dao.DB.Find(&m1).Error
+func GetChatContent() ([]Message, error) {
+	var m1 []Message
+	err := dao.DB.Find(&m1).Error
 	if err != nil {
-		return m1,err
+		return m1, err
 	}
 
-	return m1,nil
+	return m1, nil
 }

@@ -4,37 +4,39 @@ import (
 	"chatApp/dao"
 	"chatApp/middle"
 	"chatApp/model"
+	"chatApp/utils"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"strconv"
 )
 
-func Pos1tRegister(c *gin.Context) {
-
-}
-
 func PostRegister(c *gin.Context) {
-	var u1 model.User
-	c.ShouldBind(&u1)
-	if u1.Name == "admin" {
-		u1.Role = "超级管理员"
-		u1.State = true
-	} else {
-		u1.Role = "普通用户"
-		u1.State = false
+	userid := "userid_" + utils.UniqueId()
+	username := c.PostForm("UserName")
+	email := c.PostForm("Email")
+	nickname := c.PostForm("NickName")
+	password := c.PostForm("PassWord")
+	avatarPath, _ := SaveImage(c)
+	var u1 = &model.User{
+		UserID:   userid,
+		Username: username,
+		NickName: nickname,
+		Password: password,
+		Avatar:   "http://192.168.43.16:9998/api/showImg?imageName=" + avatarPath,
+		Email:    email,
 	}
-	err := dao.DB.Debug().Create(&u1).Error
+	fmt.Println(u1)
+	err := model.AddUser(*u1)
 	if err != nil {
 		//注册失败，用户名或密码或电话号码重复
 		//返回错误代码用这个http.StatusUnprocessableEntity=422才能使得前端axios catch到err
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"Err": "用户名或邮箱重复"})
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"Err": err.Error()})
 		return
 	} else {
 		//注册成功
-		fmt.Println(u1)
+		fmt.Printf("注册成功: %s", u1.Username)
 
-		token, err := middle.CreateToken(u1.Name, u1.ID)
+		token, err := middle.CreateToken(u1.Username, u1.UserID)
 		if err != nil {
 			c.JSON(http.StatusUnprocessableEntity, gin.H{
 				"code": 444,
@@ -42,10 +44,12 @@ func PostRegister(c *gin.Context) {
 			})
 		}
 		c.JSON(200, gin.H{
-			"code": 2002,
-			"msg":  "register success",
+			"code": 200,
+			"msg":  "注册成功",
 			"data": gin.H{
-				"username": u1.Name,
+				"username": u1.Username,
+				"nickname": u1.NickName,
+				"userID":   u1.UserID,
 				"token":    token,
 			},
 		})
@@ -56,19 +60,19 @@ func PostRegister(c *gin.Context) {
 func PostLogin(c *gin.Context) {
 	var u1 model.User
 	c.ShouldBind(&u1)
-	err := dao.DB.Where("email=? AND password=?", u1.Email, u1.Password).First(&u1).Error
+	err := dao.DB.Where("username=? AND password=?", u1.Username, u1.Password).First(&u1).Error
 	if err != nil {
 		//登录失败，用户名或密码或电话号码重复或用户不存在
 		//返回错误代码用这个http.StatusUnprocessableEntity=422才能使得前端axios catch到err
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"code": 422,
-			"Err": "该账号不存在"})
+			"Err":  "该账号不存在"})
 		return
 	} else {
 		//登录成功
-		fmt.Println(u1)
+		fmt.Printf("登录成功: %s", u1.Username)
 
-		token, err := middle.CreateToken(u1.Name, u1.ID)
+		token, err := middle.CreateToken(u1.Username, u1.UserID)
 		if err != nil {
 			c.JSON(http.StatusUnprocessableEntity, gin.H{
 				"code": 444,
@@ -76,85 +80,69 @@ func PostLogin(c *gin.Context) {
 			})
 		}
 		c.JSON(200, gin.H{
-			"code": 2002,
-			"msg":  "login success",
+			"code": 200,
+			"msg":  "登录成功",
 			"data": gin.H{
-				"user":  u1.ID,
-				"token": token,
+				"username": u1.Username,
+				"userID":   u1.UserID,
+				"token":    token,
 			},
 		})
 
 	}
 }
 
+// GetUserInfo 获取用户基本信息：昵称，头像等
 func GetUserInfo(c *gin.Context) {
-	userName, _ := c.Get("username")
 	id, _ := c.Get("userID")
-
-	c.JSON(http.StatusOK, gin.H{
-		"code":     200,
-		"userName": userName,
-		"uid":      id,
-	})
-}
-
-func GetMenuList(c *gin.Context) {
-	//menuList:=make(map[string]interface{},10)
-
-	m := model.NewMenu()
-
-	c.JSON(http.StatusOK, gin.H{
-		"code": 200,
-		"data": m,
-	})
-}
-
-func GetEditUser(c *gin.Context) {
-	// 获取id并转化为int
-	idS, _ := c.Params.Get("id")
-	id, _ := strconv.Atoi(idS)
-
-	user, err := model.SelectEditUser(id)
+	userInfo, err := model.SelectUser(id.(string))
 	if err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"Err": "查找不到该用户"})
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"code": 422,
+			"msg":  "user dismiss",
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"code": 200,
+			"msg":  "获取成功",
+			"data": userInfo,
+		})
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"code": 200,
-		"data": gin.H{
-			"name":      user.Name,
-			"email":     user.Email,
-			"telephone": user.Telephone,
-		},
-	})
+
 }
 
-func UpdateUser(c *gin.Context) {
+// UpdateUserInfo 更新用户的info基本信息，
+func UpdateUserInfo(c *gin.Context) {
 	// 获取id并转化为int
-	idS, _ := c.Params.Get("id")
-	id, _ := strconv.Atoi(idS)
-
-	var u1 model.EditUser
-	c.ShouldBind(&u1)
-	//state,_=strconv.ParseBool(s)
+	//userid, _ := c.Params.Get("userid")
+	ids, _ := c.Get("userID")
+	var action model.ModifyAction
+	c.ShouldBindJSON(&action)
 
 	// 更新数据库
-	user, err := model.DbUpdateUser(id, u1)
+	newUserInfo, err := model.ModifyChatUserInfo(ids.(string), &action)
 	if err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"err": "更新失败"})
 	} else {
 		c.JSON(http.StatusOK, gin.H{
 			"code": 200,
-			"data": user,
+			"msg":  "更新成功",
+			"data": gin.H{
+				"Username": newUserInfo.Username,
+				"NickName": newUserInfo.NickName,
+				"Avatar":   newUserInfo.Avatar,
+				"Email":    newUserInfo.Email,
+			},
 		})
 	}
 }
 
+// DeleteUser 根据id删除用户
 func DeleteUser(c *gin.Context) {
 	// 获取id并转化为int
-	idS, _ := c.Params.Get("id")
-	id, _ := strconv.Atoi(idS)
+	idS, _ := c.Params.Get("userid")
 
-	err := model.DeleteUser(id)
+	err := model.DeleteUser(idS)
 	if err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"code": 404,
@@ -167,43 +155,20 @@ func DeleteUser(c *gin.Context) {
 	})
 }
 
+// GetChatList 根据userid获取对应的聊天会话列表
 func GetChatList(c *gin.Context) {
-
-	users, err := model.GetUserChatList()
+	idS, _ := c.Params.Get("userid")
+	chatList, err := model.GetUserChatList(idS)
 	if err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"code": 404,
-			"msg":  "请求聊天用户失败",
+			"msg":  "请求聊天列表失败",
 		})
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"code":  200,
-		"users": users,
-	})
-}
-
-func TurnState(c *gin.Context) {
-	// 获取id并转化为int
-	idS, _ := c.Params.Get("id")
-	id, _ := strconv.Atoi(idS)
-
-	err := model.ModifyChatUserState(id, false)
-	if err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"code": 404,
-			"msg":  err.Error(),
-		})
-	}
-
-	users, err := model.GetUserChatList()
-	if err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"code": 404,
-			"msg":  "请求聊天用户失败",
-		})
-	}
-	c.JSON(http.StatusOK, gin.H{
-		"code":  200,
-		"users": users,
+		"code": 200,
+		"data": gin.H{
+			"chatList": chatList,
+		},
 	})
 }
