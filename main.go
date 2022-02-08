@@ -39,12 +39,7 @@ func main() {
 		apiGroup.POST("/updateUserInfo", middle.JWTAuthMiddleware(), controller.UpdateUserInfo)
 		apiGroup.POST("/addFriendReq", controller.AddFriendReq)
 		apiGroup.POST("/acceptFriendReq", controller.AcceptFriendReq)
-
-		//apiGroup.GET("/Userlist",middle.JWTAuthMiddleware(),controller.GetUserList)
-		//apiGroup.PUT("/updateUserState/:id",middle.JWTAuthMiddleware(),controller.UpdateUserState)
-		//apiGroup.GET("/GetEditUser/:id",middle.JWTAuthMiddleware(),controller.GetEditUser)
-		//apiGroup.PUT("/updateUser/:id",middle.JWTAuthMiddleware(),controller.UpdateUser)
-		//apiGroup.DELETE("/deleteUser/:id",middle.JWTAuthMiddleware(),controller.DeleteUser)
+		apiGroup.GET("/getFriendList",middle.JWTAuthMiddleware(),controller.GetFriendList)
 		//apiGroup.GET("/userChatlist",middle.JWTAuthMiddleware(),controller.GetChatList)
 		//apiGroup.PUT("/modifyMsgState",middle.JWTAuthMiddleware(),controller.ModifyMsgReadState)
 		//apiGroup.GET("/getChatList",middle.JWTAuthMiddleware(),controller.GetChat)

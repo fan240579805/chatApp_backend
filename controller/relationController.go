@@ -2,8 +2,8 @@ package controller
 
 import (
 	"chatApp_backend/model"
-	"fmt"
 	"github.com/gin-gonic/gin"
+	"log"
 	"net/http"
 )
 
@@ -42,7 +42,6 @@ func AddFriendReq(c *gin.Context) {
 func AcceptFriendReq(c *gin.Context) {
 	var relation model.Relation
 	c.ShouldBindJSON(&relation)
-	fmt.Println("getright", relation)
 
 	modifyErr := model.ModifyStatus(relation.From, relation.To, 1)
 	if modifyErr != nil {
@@ -61,13 +60,31 @@ func AcceptFriendReq(c *gin.Context) {
 	}
 }
 
+// GetFriendList 获取好友列表
+func GetFriendList(c *gin.Context) {
+	userid, _ := c.Get("userid")
+	friendList, err := model.SelectFriends(userid.(string))
+	if err != nil {
+		log.Println(err.Error())
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"code": 2003,
+			"msg":  "获取好友列表失败",
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"code": 200,
+			"msg":  "获取好友列表成功",
+			"data": friendList,
+		})
+	}
+}
+
 // DeleteFriendReq 某用户发起的删除好友请求，
 // 根据发起删除的用户是to还是from来为 status 设 2：from删除to 还是 3：to删除from
 func DeleteFriendReq(c *gin.Context) {
 	// 删除好友时并不知道到底 发起删除的用户是from还是被删除人是from
 	var unknownRecord model.Relation
 	c.ShouldBindJSON(&unknownRecord)
-	fmt.Println("getright", unknownRecord)
 	// 先判断一下
 	rightRelation, _ := model.GetRightRelationRecord(unknownRecord.From, unknownRecord.To)
 	if unknownRecord.From == rightRelation.From {
@@ -101,7 +118,6 @@ func DeleteFriendReq(c *gin.Context) {
 				"data": "新的好友列表发起删除的ToUser",
 			})
 			// 单方面删除，不需要给被删除的from推送好友列表
-
 		}
 	} else {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
