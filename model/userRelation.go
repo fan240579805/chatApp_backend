@@ -18,8 +18,8 @@ import (
 type Relation struct {
 	ID        int       `gorm:"column:id;unique;not null;primary_key;AUTO_INCREMENT"`
 	Status    int       `gorm:"column:status;not null"`
-	From      string    `gorm:"column:from"` // 发起好友关系的人的唯一id
-	To        string    `gorm:"column:to"`   // 接受好友关系的人的唯一id
+	From      string    `gorm:"column:fromid;not null"` // 发起好友关系的人的唯一id
+	To        string    `gorm:"column:toid;not null"`   // 接受好友关系的人的唯一id
 	CreatedAt time.Time `gorm:"column:createdat;default:null" json:"createdat"`
 	UpdatedAt time.Time `gorm:"column:updatedat;default:null" json:"updatedat"`
 }
@@ -92,17 +92,17 @@ func SelectFriends(userid string) ([]Relation, error) {
 	// 接受这段好友relation的数组  to == userid
 	var otherRealtions []Relation
 	// 2：from删除to,说明此时from用户的好友列表不需要自己删除的人
-	selectMineErr := dao.DB.Debug().Where("from = ? AND status <> ?", userid, 2).Find(&mineRealtions).Error
+	selectMineErr := dao.DB.Debug().Where("fromid=? AND status!=? AND status!=?", userid, 2, -1).Find(&mineRealtions).Error
 	if selectMineErr != nil {
 		return mineRealtions, selectMineErr
 	}
-	selectOtherErr := dao.DB.Debug().Where("to=?", userid).Find(&otherRealtions).Error
+	selectOtherErr := dao.DB.Debug().Where("toid=?", userid).Find(&otherRealtions).Error
 	if selectOtherErr != nil {
 		return otherRealtions, selectOtherErr
 	}
 	if len(mineRealtions) > 0 || len(otherRealtions) > 0 {
 		return append(mineRealtions, otherRealtions...), nil
-	}else {
-		return []Relation{},errors.New("没有好友")
+	} else {
+		return []Relation{}, errors.New("没有好友")
 	}
 }

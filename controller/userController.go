@@ -65,7 +65,7 @@ func PostRegister(c *gin.Context) {
 func PostLogin(c *gin.Context) {
 	var u1 model.User
 	c.ShouldBind(&u1)
-	err := dao.DB.Where("username=? AND password=?", u1.Username, u1.Password).First(&u1).Error
+	err := dao.DB.Debug().Where("username=? AND password=?", u1.Username, u1.Password).First(&u1).Error
 	if err != nil {
 		//登录失败，用户名或密码或电话号码重复或用户不存在
 		//返回错误代码用这个http.StatusUnprocessableEntity=422才能使得前端axios catch到err

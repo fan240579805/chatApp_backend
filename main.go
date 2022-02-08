@@ -23,7 +23,7 @@ func main() {
 	defer dao.Close()
 
 	//数据库自迁移结构体
-	dao.DB.AutoMigrate(&model.User{}, &model.Message{}, &model.Chat{}, &model.Relation{})
+	dao.DB.AutoMigrate(&model.User{}, &model.Message{}, &model.Relation{}, &model.File{}, &model.Chat{})
 
 	r := gin.Default()
 	////中间件解决跨域
@@ -31,7 +31,7 @@ func main() {
 	go ws.Manager.Start()
 	apiGroup := r.Group("api")
 	{
-		apiGroup.GET("/ws",ws.WsHandler)
+		apiGroup.GET("/ws", ws.WsHandler)
 		apiGroup.POST("/Registerauth", controller.PostRegister)
 		apiGroup.POST("/login", controller.PostLogin)
 		apiGroup.POST("/AuthToken", middle.JWTAuthMiddleware(), controller.GetUserInfo)
@@ -39,7 +39,8 @@ func main() {
 		apiGroup.POST("/updateUserInfo", middle.JWTAuthMiddleware(), controller.UpdateUserInfo)
 		apiGroup.POST("/addFriendReq", controller.AddFriendReq)
 		apiGroup.POST("/acceptFriendReq", controller.AcceptFriendReq)
-		apiGroup.GET("/getFriendList",middle.JWTAuthMiddleware(),controller.GetFriendList)
+		apiGroup.POST("/deleteFriendReq",controller.DeleteFriendReq)
+		apiGroup.GET("/getFriendList", middle.JWTAuthMiddleware(), controller.GetFriendList)
 		//apiGroup.GET("/userChatlist",middle.JWTAuthMiddleware(),controller.GetChatList)
 		//apiGroup.PUT("/modifyMsgState",middle.JWTAuthMiddleware(),controller.ModifyMsgReadState)
 		//apiGroup.GET("/getChatList",middle.JWTAuthMiddleware(),controller.GetChat)

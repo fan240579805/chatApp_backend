@@ -13,16 +13,23 @@ import (
 var ImgUrl string
 
 type User struct {
-	ID         int       `gorm:"column:id;unique;not null;primary_key;AUTO_INCREMENT"`
-	UserID     string    `gorm:"column:userid;unique;not null"`
-	Username   string    `gorm:"column:username;unique"`
-	Password   string    `gorm:"column:password;not null"`
-	Avatar     string    `gorm:"column:avatar;default:null"`
-	Email      string    `gorm:"column:email;default:null"`
-	NickName   string    `gorm:"column:nickname"`
-	ChatList   string    `gorm:"column:chatlist"`
+	ID        int       `gorm:"column:id;unique;not null;primary_key;AUTO_INCREMENT"`
+	UserID    string    `gorm:"column:userid;unique;not null"`
+	Username  string    `gorm:"column:username;unique"`
+	Password  string    `gorm:"column:password;not null"`
+	Avatar    string    `gorm:"column:avatar;default:null"`
+	Email     string    `gorm:"column:email;default:null"`
+	NickName  string    `gorm:"column:nickname"`
+	ChatList  string    `gorm:"column:chatlist"`
 	CreatedAt time.Time `gorm:"column:createdat;default:null" json:"createdat"`
 	UpdatedAt time.Time `gorm:"column:updatedat;default:null" json:"updatedat"`
+}
+type UserInfo struct {
+	UserID   string
+	Username string
+	Avatar   string
+	Email    string
+	NickName string
 }
 
 type ChatList []string
@@ -83,13 +90,21 @@ func AddUser(user User) error {
 }
 
 // SelectUser 根据id查询用户信息
-func SelectUser(id string) (User, error) {
+func SelectUser(id string) (*UserInfo, error) {
+	var userInfo *UserInfo
 	var user User
 	err := dao.DB.Debug().Where("userid=?", id).Select("id,userid,username,nickname,avatar,email").First(&user).Error
 	if err != nil {
-		return user, err
+		return userInfo, err
 	}
-	return user, nil
+	userInfo = &UserInfo{
+		UserID:   user.UserID,
+		Username: user.Username,
+		Avatar:   user.Avatar,
+		Email:    user.Email,
+		NickName: user.NickName,
+	}
+	return userInfo, nil
 }
 
 // ModifyChatUserInfo 根据 id 查询出用户并更新相应信息; modifyAction-要更新的数据库字段命及参数
@@ -101,7 +116,7 @@ func ModifyChatUserInfo(id string, action *ModifyAction) (User, error) {
 		return user, err
 	}
 	if action.InfoAttr == "avatar" {
-		var avatarFileName= action.Playloads
+		var avatarFileName = action.Playloads
 		action.Playloads = _const.BASE_URL + "/api/showImg?imageName=" + _const.AVATAR_PATH + avatarFileName
 	}
 	err = dao.DB.Model(&user).Update(action.InfoAttr, action.Playloads).Error

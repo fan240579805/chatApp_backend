@@ -5,12 +5,19 @@ import (
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
+	"time"
 )
 
 type addFriendReqParams struct {
 	Username string
 	Fromid   string
 	Toid     string
+}
+
+type Friend struct {
+	FriendProfile *model.UserInfo
+	AddTime       time.Time
+	Status        int
 }
 
 // AddFriendReq from用户像to用户发起好友请求（to还没同意）
@@ -62,8 +69,8 @@ func AcceptFriendReq(c *gin.Context) {
 
 // GetFriendList 获取好友列表
 func GetFriendList(c *gin.Context) {
-	userid, _ := c.Get("userid")
-	friendList, err := model.SelectFriends(userid.(string))
+	userid, _ := c.Get("userID")
+	relationList, err := model.SelectFriends(userid.(string))
 	if err != nil {
 		log.Println(err.Error())
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
@@ -71,6 +78,8 @@ func GetFriendList(c *gin.Context) {
 			"msg":  "获取好友列表失败",
 		})
 	} else {
+		// 处理一下friendList并返回给前端
+		friendList := FormatFriendList(relationList, userid.(string))
 		c.JSON(http.StatusOK, gin.H{
 			"code": 200,
 			"msg":  "获取好友列表成功",
@@ -125,5 +134,29 @@ func DeleteFriendReq(c *gin.Context) {
 			"msg":  "查询记录失败，不存在该关系记录",
 		})
 	}
+}
 
+// FormatFriendList 格式化获得 friendList ;  userid为当前登录用户
+func FormatFriendList(relationList []model.Relation, userid string) []*Friend {
+	var friendList = make([]*Friend, len(relationList))
+	for i, relation := range relationList {
+		if relation.From == userid {
+			// 不要把自己的信息录入 friendList
+			userProfile, _ := model.SelectUser(relation.To)
+			friendList[i] = &Friend{
+				FriendProfile: userProfile,
+				AddTime:       relation.CreatedAt,
+				Status:        relation.Status,
+			}
+		} else if relation.To == userid {
+			// 不要把自己的信息录入 friendList
+			userProfile, _ := model.SelectUser(relation.From)
+			friendList[i] = &Friend{
+				FriendProfile: userProfile,
+				AddTime:       relation.CreatedAt,
+				Status:        relation.Status,
+			}
+		}
+	}
+	return friendList
 }
