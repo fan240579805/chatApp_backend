@@ -1,12 +1,14 @@
 package ws
 
 import (
-	"chatApp/model"
+	"chatApp_backend/model"
 	"encoding/json"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -15,11 +17,13 @@ type Client struct {
 	ID     string
 	Socket *websocket.Conn
 	Send   chan []byte
-	//UserInfo model.User
+	//User   model.User
+	mutex sync.Mutex
 }
 
 func WsHandler(c *gin.Context) {
-	uid := c.Query("uid")
+	uid := c.Query("userid")
+	fmt.Println(uid)
 	//to_uid:=c.Query("to_uid")
 
 	// ws升级器
@@ -36,15 +40,21 @@ func WsHandler(c *gin.Context) {
 	//var u1 model.User
 	//dao.DB.Where("id=?",id).First(&u1)
 	client := &Client{
-		ID:     createId(uid),
+		ID:     uid,
 		Socket: ws,
 		Send:   make(chan []byte, 256),
 		//UserInfo: u1,
 	}
+
+	//申明定时器15s，设置心跳时间为15s
+	//ticker := time.NewTicker(time.Second * 15)
+	//go client.timeWriter(ticker)
+	// 将该登陆用户存入 Register Map中
 	Manager.Register <- client
 	go client.Read()
 	go client.Write()
 }
+
 
 func (c *Client) Read() {
 	// 延迟关闭客户端连接
@@ -67,9 +77,9 @@ func (c *Client) Read() {
 		json.Unmarshal(message, &m1)
 		m1.SendTime = time.Now().Unix()
 
-		if m1.Type == "img" {
-			m1.Image = model.ImgUrl
-		}
+		//if m1.Type == "img" {
+		//	m1.Image = model.ImgUrl
+		//}
 
 		message1, _ := json.Marshal(&m1)
 

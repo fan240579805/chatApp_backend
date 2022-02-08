@@ -1,7 +1,7 @@
 package model
 
 import (
-	"chatApp/dao"
+	"chatApp_backend/dao"
 	"time"
 )
 
@@ -14,7 +14,8 @@ type Message struct {
 	Content    string    `json:"content"`
 	SendTime   int64     `json:"time"`
 	Type       string    `json:"type"` //消息类型 img: 图片 text: 文本 audio: 音频
-	CreateTime time.Time `gorm:"column:createtime;default:null" json:"createtime"`
+	CreatedAt time.Time `gorm:"column:createdat;default:null" json:"createdat"`
+	UpdatedAt time.Time `gorm:"column:updatedat;default:null" json:"updatedat"`
 }
 //	AddMessageRecord 往聊天记录表添加记录
 func AddMessageRecord(msg Message) error {

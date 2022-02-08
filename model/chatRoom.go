@@ -12,6 +12,11 @@ type Chat struct {
 	Other      string    `gorm:"column:other;not null"`   // 被发起聊天的Other其他人id
 	Unread     int       `gorm:"column:unread;default:0"` // 会话未读数量
 	RecentMsg  string    `gorm:"column:recentmsg"`        // 最近一条聊天记录用于展示聊天列表, Message类型的json字符串
-	CreateTime time.Time `gorm:"column:createtime;default:null" json:"createtime"`
-	UpdateTime time.Time `gorm:"column:updatetime;default:null" json:"updatetime"`
+	CreatedAt time.Time `gorm:"column:createdat;default:null" json:"createdat"`
+	UpdatedAt time.Time `gorm:"column:updatedat;default:null" json:"updatedat"`
+}
+
+// createChat 创建一条对话记录
+func createChat()  {
+
 }

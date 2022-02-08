@@ -1,7 +1,8 @@
 package model
 
 import (
-	"chatApp/dao"
+	"chatApp_backend/_const"
+	"chatApp_backend/dao"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -20,8 +21,8 @@ type User struct {
 	Email      string    `gorm:"column:email;default:null"`
 	NickName   string    `gorm:"column:nickname"`
 	ChatList   string    `gorm:"column:chatlist"`
-	CreateTime time.Time `gorm:"column:createtime;default:null" json:"createtime"`
-	UpdateTime time.Time `gorm:"column:updatetime;default:null" json:"updatetime"`
+	CreatedAt time.Time `gorm:"column:createdat;default:null" json:"createdat"`
+	UpdatedAt time.Time `gorm:"column:updatedat;default:null" json:"updatedat"`
 }
 
 type ChatList []string
@@ -98,6 +99,10 @@ func ModifyChatUserInfo(id string, action *ModifyAction) (User, error) {
 	err := dao.DB.Where("userid=?", id).First(&user).Error
 	if err != nil {
 		return user, err
+	}
+	if action.InfoAttr == "avatar" {
+		var avatarFileName= action.Playloads
+		action.Playloads = _const.BASE_URL + "/api/showImg?imageName=" + _const.AVATAR_PATH + avatarFileName
 	}
 	err = dao.DB.Model(&user).Update(action.InfoAttr, action.Playloads).Error
 	if err != nil {

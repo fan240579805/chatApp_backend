@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"chatApp/model"
+	"chatApp_backend/model"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"

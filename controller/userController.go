@@ -1,10 +1,11 @@
 package controller
 
 import (
-	"chatApp/dao"
-	"chatApp/middle"
-	"chatApp/model"
-	"chatApp/utils"
+	"chatApp_backend/_const"
+	"chatApp_backend/dao"
+	"chatApp_backend/middle"
+	"chatApp_backend/model"
+	"chatApp_backend/utils"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -22,7 +23,7 @@ func PostRegister(c *gin.Context) {
 		Username: username,
 		NickName: nickname,
 		Password: password,
-		Avatar:   "http://192.168.43.16:9998/api/showImg?imageName=" + avatarPath,
+		Avatar:   _const.BASE_URL+"/api/showImg?imageName=" + avatarPath,
 		Email:    email,
 	}
 	fmt.Println(u1)

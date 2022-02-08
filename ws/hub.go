@@ -1,7 +1,7 @@
 package ws
 
 import (
-	"chatApp/model"
+	"chatApp_backend/model"
 	"encoding/json"
 	"log"
 )
@@ -11,13 +11,17 @@ type ClientManger struct {
 	Register chan *Client
 	UnRegister chan *Client
 	Broadcast chan []byte
+	PushChat chan []byte
 }
 
 var Manager = ClientManger{
 	Clients:    make(map[string]*Client),
 	Register:   make(chan *Client),
 	UnRegister: make(chan *Client),
+	// 传递消息message的管道
 	Broadcast:  make(chan []byte),
+	// 推送chat聊天框给对方的管道
+	PushChat: make(chan []byte),
 }
 
 func createId(uid string) string  {
@@ -29,13 +33,13 @@ func (Manager *ClientManger) Start()  {
 		select {
 		// 新用户加入
 		case client:= <- Manager.Register:
-			log.Println("新用户加入")
+			log.Printf("用户加入:%s", client.ID)
 			Manager.Clients[client.ID] = client
 			jsonMessage, _ := json.Marshal(&model.Message{Content: "Successful connection to socket service"})
 			client.Send <- jsonMessage
 		//	旧用户注销
 		case client:= <- Manager.UnRegister:
-			log.Printf("用户离开:%v", client.ID)
+			log.Printf("用户离开:%s", client.ID)
 
 			if _, ok := Manager.Clients[client.ID]; ok {
 				jsonMessage, _ := json.Marshal(&model.Message{Content: "A socket has disconnected"})

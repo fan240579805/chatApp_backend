@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"chatApp_backend/_const"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"mime/multipart"
@@ -36,7 +37,7 @@ func SaveImage(c *gin.Context) (string, *multipart.FileHeader) {
 		})
 		return "", nil
 	}
-	dst := path.Join("statics/images/", fileHeader.Filename) //上传文件保存路径
+	dst := path.Join(_const.AVATAR_PATH, fileHeader.Filename) //上传文件保存路径
 	fmt.Println(dst)
 
 	saveError := c.SaveUploadedFile(fileHeader, dst)

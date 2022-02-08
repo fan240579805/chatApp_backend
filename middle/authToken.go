@@ -1,8 +1,8 @@
 package middle
 
 import (
-	"chatApp/dao"
-	"chatApp/model"
+	"chatApp_backend/dao"
+	"chatApp_backend/model"
 	"errors"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"

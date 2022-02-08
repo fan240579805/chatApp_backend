@@ -1,8 +1,8 @@
 package model
 
 import (
-	"chatApp/dao"
-	"chatApp/utils"
+	"chatApp_backend/dao"
+	"chatApp_backend/utils"
 	"time"
 )
 
@@ -10,12 +10,12 @@ import (
 处理文件  图片 语音model
 */
 type File struct {
-	FileId     string    `gorm:"column:fileid;not null"`
+	FileId     string    `gorm:"column:fileid;not null;primary_key"`
 	Owner      string    `gorm:"column:owner;not null"`    // 文件的拥有者用户的唯一id
 	Type       string    `gorm:"column:type;not null"`     // 文件类型 audio语音 image图片
 	FileInfo   string    `gorm:"column:fileinfo;not null"` // 文件命，文件概况
-	CreateTime time.Time `gorm:"column:createtime;default:null" json:"createtime"`
-	UpdateTime time.Time `gorm:"column:updatetime;default:null" json:"updatetime"`
+	CreatedAt time.Time `gorm:"column:createdat;default:null" json:"createdat"`
+	UpdatedAt time.Time `gorm:"column:updatedat;default:null" json:"updatedat"`
 }
 
 func InsertFile(filePath string, userid string, typeName string, fileInfo string) error {

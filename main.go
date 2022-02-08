@@ -1,13 +1,11 @@
 package main
 
 import (
-	"chatApp/controller"
-	"chatApp/dao"
-	"chatApp/middle"
-	"chatApp/model"
-	"chatApp/utils"
-
-	//"chatApp/controller"
+	"chatApp_backend/controller"
+	"chatApp_backend/dao"
+	"chatApp_backend/middle"
+	"chatApp_backend/model"
+	"chatApp_backend/ws"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
@@ -28,30 +26,31 @@ func main() {
 	dao.DB.AutoMigrate(&model.User{}, &model.Message{}, &model.Chat{}, &model.Relation{})
 
 	r := gin.Default()
-	fmt.Println(utils.UniqueId())
 	////中间件解决跨域
 	//r.Use(middle.Cors1())
-	//go ws.Manager.Start()
+	go ws.Manager.Start()
 	apiGroup := r.Group("api")
 	{
+		apiGroup.GET("/ws",ws.WsHandler)
 		apiGroup.POST("/Registerauth", controller.PostRegister)
 		apiGroup.POST("/login", controller.PostLogin)
 		apiGroup.POST("/AuthToken", middle.JWTAuthMiddleware(), controller.GetUserInfo)
 		apiGroup.GET("/userInfo", middle.JWTAuthMiddleware(), controller.GetUserInfo)
 		apiGroup.POST("/updateUserInfo", middle.JWTAuthMiddleware(), controller.UpdateUserInfo)
-		//apiGroup.GET("/menuList",middle.JWTAuthMiddleware(),controller.GetMenuList)
+		apiGroup.POST("/addFriendReq", controller.AddFriendReq)
+		apiGroup.POST("/acceptFriendReq", controller.AcceptFriendReq)
+
 		//apiGroup.GET("/Userlist",middle.JWTAuthMiddleware(),controller.GetUserList)
 		//apiGroup.PUT("/updateUserState/:id",middle.JWTAuthMiddleware(),controller.UpdateUserState)
 		//apiGroup.GET("/GetEditUser/:id",middle.JWTAuthMiddleware(),controller.GetEditUser)
 		//apiGroup.PUT("/updateUser/:id",middle.JWTAuthMiddleware(),controller.UpdateUser)
 		//apiGroup.DELETE("/deleteUser/:id",middle.JWTAuthMiddleware(),controller.DeleteUser)
 		//apiGroup.GET("/userChatlist",middle.JWTAuthMiddleware(),controller.GetChatList)
-		//apiGroup.GET("/ws",ws.WsHandler)
 		//apiGroup.PUT("/modifyMsgState",middle.JWTAuthMiddleware(),controller.ModifyMsgReadState)
 		//apiGroup.GET("/getChatList",middle.JWTAuthMiddleware(),controller.GetChat)
 		//apiGroup.POST("/saveImg",middle.JWTAuthMiddleware(),controller.SaveImg)
 		apiGroup.GET("/showImg", controller.ShowImage)
-		apiGroup.POST("/AJAX/:id", testAJAX)
+		apiGroup.GET("/AJAX/:id", testAJAX)
 		apiGroup.POST("/uploadFile", controller.UploadImage)
 	}
 
