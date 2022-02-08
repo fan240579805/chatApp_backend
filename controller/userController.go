@@ -26,7 +26,6 @@ func PostRegister(c *gin.Context) {
 		Avatar:   _const.BASE_URL+"/api/showImg?imageName=" + avatarPath,
 		Email:    email,
 	}
-	fmt.Println(u1)
 	err := model.AddUser(*u1)
 	if err != nil {
 		fmt.Println(err.Error())

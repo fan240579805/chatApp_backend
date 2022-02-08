@@ -91,12 +91,13 @@ func SelectFriends(userid string) ([]Relation, error) {
 	var mineRealtions []Relation
 	// 接受这段好友relation的数组  to == userid
 	var otherRealtions []Relation
-	// 2：from删除to,说明此时from用户的好友列表不需要自己删除的人
+	// 2：此时请求friendList的用户在relation表中是from, 不需要from主动删除即 status = 2 的好友
 	selectMineErr := dao.DB.Debug().Where("fromid=? AND status!=? AND status!=?", userid, 2, -1).Find(&mineRealtions).Error
 	if selectMineErr != nil {
 		return mineRealtions, selectMineErr
 	}
-	selectOtherErr := dao.DB.Debug().Where("toid=?", userid).Find(&otherRealtions).Error
+	// 3：此时请求friendList的用户在relation表中是to, 不需要to主动删除即 status = 3 的好友
+	selectOtherErr := dao.DB.Debug().Where("toid=? AND status!=? AND status!=?", userid, 3, -1).Find(&otherRealtions).Error
 	if selectOtherErr != nil {
 		return otherRealtions, selectOtherErr
 	}
