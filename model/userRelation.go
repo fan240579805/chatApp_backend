@@ -42,7 +42,7 @@ func AddFriendRecord(username string, fromUserid string, ToUserid string) error 
 		}
 		err := dao.DB.Debug().Create(&relation).Error
 		if err != nil {
-			return err
+			return errors.New("用户入库失败")
 		}
 		return nil
 	} else {

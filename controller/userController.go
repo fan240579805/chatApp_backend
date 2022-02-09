@@ -17,13 +17,13 @@ func PostRegister(c *gin.Context) {
 	email := c.PostForm("Email")
 	nickname := c.PostForm("NickName")
 	password := c.PostForm("PassWord")
-	avatarPath, _ := SaveImage(c)
+	avatarPath, _ := SaveAvatarImage(c)
 	var u1 = &model.User{
 		UserID:   userid,
 		Username: username,
 		NickName: nickname,
 		Password: password,
-		Avatar:   _const.BASE_URL+"/api/showImg?imageName=" + avatarPath,
+		Avatar:   _const.BASE_URL + "/api/showImg?imageName=" + avatarPath,
 		Email:    email,
 	}
 	err := model.AddUser(*u1)
@@ -152,11 +152,29 @@ func DeleteUser(c *gin.Context) {
 			"code": 404,
 			"msg":  "删除失败",
 		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"code": 200,
+			"msg":  "删除成功",
+		})
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"code": 200,
-		"msg":  "删除成功",
-	})
+}
+// SearchUser 根据账号搜索用户
+func SearchUser(c *gin.Context) {
+	username, _ := c.Params.Get("username")
+	user, err := model.FindUser(username)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"code": 404,
+			"msg":  "用户不存在",
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"code": 200,
+			"msg":  "搜索成功",
+			"data": user,
+		})
+	}
 }
 
 // GetChatList 根据userid获取对应的聊天会话列表

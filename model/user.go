@@ -151,35 +151,15 @@ func GetUserChatList(id string) ([]Chat, error) {
 	return chatList, nil
 }
 
-// findAllUsers 查询所有用户以及根据搜索结果查询用户
-func findAllUsers(page int, contentSize int, search string) ([]User, int, error) {
-	var users []User
-	var count int
-	var of int
-
-	// 偏移量= （页数-1）* 每一页的数据量
-	of = (page - 1) * contentSize
+// FindUser 根据搜索结果查询用户
+func FindUser(search string) (User, error) {
+	var user User
 	// 搜索数据库
-	if search != "" {
-		err := dao.DB.Debug().Where("username=?", search).Select("id,userid,username,nickname,avatar").
-			Find(&users).Count(&count).Error
-		if err != nil {
-			return users, count, err
-		} else {
-			return users, count, nil
-		}
-	} else { // 搜索框没有东西
-
-		// 总用户数量
-		dao.DB.Find(&users).Count(&count)
-
-		err := dao.DB.Debug().Select("id,name, email,telephone,role,state").
-			Offset(of).Limit(contentSize).Find(&users).Error
-		if err != nil {
-			return users, 0, err
-		} else {
-			return users, count, nil
-		}
+	err := dao.DB.Debug().Where("username=?", search).Select("id,userid,username,nickname,avatar").
+		First(&user).Error
+	if err != nil {
+		return user, err
+	} else {
+		return user, nil
 	}
-
 }

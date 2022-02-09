@@ -33,9 +33,9 @@ func AddFriendReq(c *gin.Context) {
 	}
 	addFriendERR := model.AddFriendRecord(params.Username, params.Fromid, params.Toid)
 	if addFriendERR != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"code": 2003,
-			"msg":  "添加请求失败",
+			"msg":  addFriendERR.Error(),
 		})
 	} else {
 		c.JSON(http.StatusOK, gin.H{
