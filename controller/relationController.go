@@ -38,9 +38,13 @@ func AddFriendReq(c *gin.Context) {
 			"msg":  addFriendERR.Error(),
 		})
 	} else {
+		rightRelation, _ := model.GetRightRelationRecord(params.Fromid, params.Toid)
 		c.JSON(http.StatusOK, gin.H{
 			"code": 200,
 			"msg":  "添加请求成功",
+			"data": gin.H{
+				"status": rightRelation.Status,
+			},
 		})
 		// 执行推送给to用户好友请求逻辑 pushToUser
 	}

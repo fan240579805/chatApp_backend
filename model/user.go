@@ -152,14 +152,22 @@ func GetUserChatList(id string) ([]Chat, error) {
 }
 
 // FindUser 根据搜索结果查询用户
-func FindUser(search string) (User, error) {
-	var user User
+func FindUser(search string) (*UserInfo, error) {
 	// 搜索数据库
+	var userInfo *UserInfo
+	var user User
 	err := dao.DB.Debug().Where("username=?", search).Select("id,userid,username,nickname,avatar").
 		First(&user).Error
 	if err != nil {
-		return user, err
+		return userInfo, err
 	} else {
-		return user, nil
+		userInfo = &UserInfo{
+			UserID:   user.UserID,
+			Username: user.Username,
+			Avatar:   user.Avatar,
+			Email:    user.Email,
+			NickName: user.NickName,
+		}
+		return userInfo, nil
 	}
 }

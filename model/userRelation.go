@@ -3,7 +3,6 @@ package model
 import (
 	"chatApp_backend/dao"
 	"errors"
-	"fmt"
 	"time"
 )
 
@@ -72,15 +71,16 @@ func ModifyStatus(userid1 string, userid2 string, status int) error {
 // 返回一个正确的关系记录以便后续操作
 func GetRightRelationRecord(fromUserid string, toUserid string) (Relation, error) {
 	var relation Relation
-	fmt.Println(fromUserid)
-	fmt.Println(toUserid)
 	finderr1 := dao.DB.Debug().Where(&Relation{From: fromUserid, To: toUserid}).First(&relation).Error
 	if finderr1 != nil {
 		// 说明没查到用例1，继续查
 		finderr2 := dao.DB.Debug().Where(&Relation{From: toUserid, To: fromUserid}).First(&relation).Error
 		if finderr2 != nil {
 			return relation, finderr2
+		}else {
+			return relation, nil
 		}
+		return Relation{}, finderr1
 	}
 	return relation, nil
 }
