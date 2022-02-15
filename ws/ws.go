@@ -98,6 +98,7 @@ func (c *Client) Read() {
 	}
 }
 
+// 将数据流写回给前端
 func (c *Client) Write() {
 	// 延迟关闭客户端连接
 	defer func() {
