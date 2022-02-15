@@ -39,6 +39,7 @@ func main() {
 		apiGroup.POST("/updateUserInfo", middle.JWTAuthMiddleware(), controller.UpdateUserInfo)
 		apiGroup.POST("/addFriendReq", middle.JWTAuthMiddleware(), controller.AddFriendReq)
 		apiGroup.POST("/acceptFriendReq", middle.JWTAuthMiddleware(), controller.AcceptFriendReq)
+		apiGroup.POST("/rejectFriendReq", middle.JWTAuthMiddleware(), controller.RejectFriendReq)
 		apiGroup.POST("/deleteFriendReq", middle.JWTAuthMiddleware(), controller.DeleteFriendReq)
 		apiGroup.GET("/getFriendList", middle.JWTAuthMiddleware(), controller.GetFriendList)
 		apiGroup.POST("/takeBlack", middle.JWTAuthMiddleware(), controller.TakeBlackReq)
