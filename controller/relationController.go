@@ -5,7 +5,6 @@ import (
 	_type "chatApp_backend/type"
 	"chatApp_backend/ws"
 	"encoding/json"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
@@ -16,7 +15,6 @@ type addFriendReqParams struct {
 	Fromid   string
 	Toid     string
 }
-
 
 // AddFriendReq from用户像to用户发起好友请求（to还没同意）
 // 此时的 from to是明确的
@@ -45,17 +43,7 @@ func AddFriendReq(c *gin.Context) {
 			},
 		})
 		// 执行推送给to用户好友请求逻辑 pushToUser
-		userProfile, _ := model.SelectUser(rightRelation.From)
-		friend:= &_type.Friend{
-			FriendProfile: userProfile,
-			AddTime:       rightRelation.CreatedAt,
-			Status:        rightRelation.Status,
-		}
-		pushedObj := &_type.BePushedFriend{
-			BePushedID:    rightRelation.To,
-			Friend: *friend,
-		}
-		PushFriendReq2user(pushedObj)
+		PushFriendReq2user(rightRelation, rightRelation.From, rightRelation.To)
 	}
 }
 
@@ -77,7 +65,9 @@ func AcceptFriendReq(c *gin.Context) {
 			"msg":  "接受成功",
 			"data": FormatFriendList(relation.To, c),
 		})
+		rightRelation, _ := model.GetRightRelationRecord(relation.From, relation.To)
 		// pushFromUser 将新的好友列表推送给发起好友请求的FromUser
+		PushFriendReq2user(rightRelation, relation.To, relation.From)
 	}
 }
 
@@ -99,7 +89,9 @@ func RejectFriendReq(c *gin.Context) {
 			"msg":  "拒绝成功",
 			"data": FormatFriendList(relation.To, c),
 		})
+		rightRelation, _ := model.GetRightRelationRecord(relation.From, relation.To)
 		// pushFromUser 将新的好友列表推送给发起好友请求的FromUser
+		PushFriendReq2user(rightRelation, relation.To, relation.From)
 	}
 }
 
@@ -194,6 +186,7 @@ func TakeBlackReq(c *gin.Context) {
 				"data": FormatFriendList(rightRelation.From, c),
 			})
 			// 推送给被拉黑用户to
+			PushFriendReq2user(rightRelation, rightRelation.From, rightRelation.To)
 		}
 	} else if unknownRecord.From == rightRelation.To {
 		// 发起拉黑的用户是  一开始接受好友请求的人（to） status = 5
@@ -211,6 +204,7 @@ func TakeBlackReq(c *gin.Context) {
 				"data": FormatFriendList(rightRelation.To, c),
 			})
 			// 推送给被拉黑用户from
+			PushFriendReq2user(rightRelation, rightRelation.To, rightRelation.From)
 		}
 	} else {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
@@ -255,11 +249,20 @@ func FormatFriendList(userid string, c *gin.Context) []*_type.Friend {
 	return friendList
 }
 
-
 // PushFriendReq2user 将要推送的friend数据流传入chan给manager处理
-func PushFriendReq2user(newFriendOBJ *_type.BePushedFriend)  {
-	FriendChan,err := json.Marshal(newFriendOBJ)
-	fmt.Println(newFriendOBJ.Friend.FriendProfile.Username)
+func PushFriendReq2user(rightRelation model.Relation, newFriendUserid string, pushedUserid string) {
+	userProfile, _ := model.SelectUser(newFriendUserid)
+	friend := &_type.Friend{
+		FriendProfile: userProfile,
+		AddTime:       rightRelation.CreatedAt,
+		Status:        rightRelation.Status,
+	}
+	pushedObj := &_type.BePushedFriend{
+		BePushedID: pushedUserid,
+		Friend:     *friend,
+	}
+
+	FriendChan, err := json.Marshal(pushedObj)
 	if err != nil {
 		log.Println("解析推送好友列表出错")
 	}
