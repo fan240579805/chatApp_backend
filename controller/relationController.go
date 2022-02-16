@@ -258,6 +258,7 @@ func PushFriendReq2user(rightRelation model.Relation, newFriendUserid string, pu
 		Status:        rightRelation.Status,
 	}
 	pushedObj := &_type.BePushedFriend{
+		DataType: "friend",
 		BePushedID: pushedUserid,
 		Friend:     *friend,
 	}
