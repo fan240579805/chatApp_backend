@@ -8,7 +8,6 @@ import (
 
 // Relation
 //	status：关系状态码
-//  -2：from主动加to，to用户拒绝，挂起
 //  -1：from主动加to，to用户还没同意，挂起
 //	1: from主动加to，to用户同意了，并成为好友
 //	2：from删除to
@@ -93,18 +92,26 @@ func SelectFriends(userid string) ([]Relation, error) {
 	// 接受这段好友relation的数组  to == userid
 	var otherRealtions []Relation
 	// 2：此时请求friendList的用户在relation表中是from, 不需要from主动删除即 status = 2 的好友
-	selectMineErr := dao.DB.Debug().Where("fromid=? AND status!=? AND status!=?", userid, 2, -2).Find(&mineRealtions).Error
+	selectMineErr := dao.DB.Debug().Where("fromid=? AND status!=?", userid, 2).Find(&mineRealtions).Error
 	if selectMineErr != nil {
 		return mineRealtions, selectMineErr
 	}
 	// 3：此时请求friendList的用户在relation表中是to, 不需要to主动删除即 status = 3 的好友
-	selectOtherErr := dao.DB.Debug().Where("toid=? AND status!=? AND status!=?", userid, 3, -2).Find(&otherRealtions).Error
+	selectOtherErr := dao.DB.Debug().Where("toid=? AND status!=?", userid, 3).Find(&otherRealtions).Error
 	if selectOtherErr != nil {
 		return otherRealtions, selectOtherErr
 	}
 	if len(mineRealtions) > 0 || len(otherRealtions) > 0 {
 		return append(mineRealtions, otherRealtions...), nil
 	} else {
-		return []Relation{}, errors.New("没有好友")
+		return []Relation{}, nil
 	}
+}
+
+func DeleteRelation(relation Relation) error {
+	err:= dao.DB.Debug().Where("fromid=? AND toid=?", relation.From,relation.To).Delete(&Relation{}).Error
+	if err != nil {
+		return err
+	}
+	return nil
 }

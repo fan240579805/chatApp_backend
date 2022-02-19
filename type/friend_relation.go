@@ -7,7 +7,7 @@ import (
 
 // BePushedFriend 推送给制定用户id的新的好友的结构体
 type BePushedFriend struct {
-	DataType   string   // 区分websocket要推送的数据是好友类型还是消息类型
+	DataType   string // 区分websocket要推送的数据是好友类型还是消息类型
 	BePushedID string
 	Friend     Friend
 }
@@ -17,4 +17,5 @@ type Friend struct {
 	FriendProfile *model.UserInfo
 	AddTime       time.Time
 	Status        int
+	IsMaster      bool
 }

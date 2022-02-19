@@ -171,10 +171,30 @@ func SearchUser(c *gin.Context) {
 			"msg":  "用户不存在",
 		})
 	}
+	if userid.(string) == userInfo.UserID{
+		// 用户搜索自己，返回自己
+		c.JSON(http.StatusOK, gin.H{
+			"code": 200,
+			"msg":  "搜索成功",
+			"data": gin.H{
+				"userInfo": userInfo,
+				"status":   -99,
+				"isMaster": true,
+			},
+		})
+		return
+	}
 	// 先查一下，看看用户是否已经添加搜索的好友
 	rightRelation, rightRelationErr := model.GetRightRelationRecord(userid.(string), userInfo.UserID)
-	if rightRelationErr == nil {
-		fmt.Println("searchL",rightRelation)
+	var isMaster bool
+	if rightRelation.From == userid {
+		// 此时发起搜索的用户是主动发起好友的人
+		isMaster = true
+	} else {
+		isMaster = false
+	}
+	if rightRelationErr == nil && rightRelation.Status == -1 {
+		fmt.Println("searchL", rightRelation)
 		// 搜索出来的好友已经添加过了，额外传多一个status
 		c.JSON(http.StatusOK, gin.H{
 			"code": 200,
@@ -182,15 +202,24 @@ func SearchUser(c *gin.Context) {
 			"data": gin.H{
 				"userInfo": userInfo,
 				"status":   rightRelation.Status,
+				"isMaster": isMaster,
 			},
 		})
 	} else {
+		var Status int
+		if rightRelation.From == "" {
+			// 两个用户从未建立关系
+			Status = 0
+		}else {
+			Status = rightRelation.Status
+		}
 		c.JSON(http.StatusOK, gin.H{
 			"code": 200,
 			"msg":  "搜索成功",
 			"data": gin.H{
 				"userInfo": userInfo,
-				"status":   0,
+				"status":   Status,
+				"isMaster": isMaster,
 			},
 		})
 	}
