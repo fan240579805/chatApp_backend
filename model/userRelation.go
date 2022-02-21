@@ -44,8 +44,28 @@ func AddFriendRecord(username string, fromUserid string, ToUserid string) error 
 			return errors.New("用户入库失败")
 		}
 		return nil
-	} else {
+	} else if rightRelation.Status == 1 {
 		return errors.New("已经添加过该用户")
+	} else {
+		// 删掉原来的关系记录，重新insert一条
+		delErr := DeleteRelation(rightRelation)
+		finderr := dao.DB.Where("username=?", username).Select("userid").Find(&user).Error
+		if finderr != nil {
+			return finderr
+		}
+		if delErr != nil {
+			return errors.New("添加失败")
+		}
+		relation := &Relation{
+			Status: -1,
+			From:   fromUserid,
+			To:     user.UserID,
+		}
+		err := dao.DB.Debug().Create(&relation).Error
+		if err != nil {
+			return errors.New("用户入库失败")
+		}
+		return nil
 	}
 }
 
@@ -109,7 +129,7 @@ func SelectFriends(userid string) ([]Relation, error) {
 }
 
 func DeleteRelation(relation Relation) error {
-	err:= dao.DB.Debug().Where("fromid=? AND toid=?", relation.From,relation.To).Delete(&Relation{}).Error
+	err := dao.DB.Debug().Where("fromid=? AND toid=?", relation.From, relation.To).Delete(&Relation{}).Error
 	if err != nil {
 		return err
 	}

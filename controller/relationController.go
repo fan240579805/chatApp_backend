@@ -40,7 +40,8 @@ func AddFriendReq(c *gin.Context) {
 			"code": 200,
 			"msg":  "添加请求成功",
 			"data": gin.H{
-				"status": rightRelation.Status,
+				"Status":     rightRelation.Status,
+				"friendList": FormatFriendList(params.Fromid, c),
 			},
 		})
 		// 执行推送给to用户好友请求逻辑 pushToUser
@@ -78,8 +79,6 @@ func RejectFriendReq(c *gin.Context) {
 	var relation model.Relation
 	c.ShouldBindJSON(&relation)
 	rightRelation, _ := model.GetRightRelationRecord(relation.From, relation.To)
-	fmt.Println("拒绝rigth", rightRelation)
-
 	modifyErr := model.DeleteRelation(rightRelation)
 	if modifyErr != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
@@ -165,6 +164,26 @@ func DeleteFriendReq(c *gin.Context) {
 	}
 }
 
+// BothDelFriend 双方互删了 直接删除关系记录
+func BothDelFriend(c *gin.Context) {
+	var unknownRecord model.Relation
+	c.ShouldBindJSON(&unknownRecord)
+	rightRelation, _ := model.GetRightRelationRecord(unknownRecord.From, unknownRecord.To)
+	modifyErr := model.DeleteRelation(rightRelation)
+	if modifyErr != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"code": 2003,
+			"msg":  "移除失败",
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"code": 200,
+			"msg":  "移除成功",
+			"data": FormatFriendList(rightRelation.To, c),
+		})
+	}
+}
+
 // TakeBlackReq 某用户发起的删除好友请求，
 // 根据发起拉黑的用户是to还是from来为 status 设 4：from拉黑了to  还是 5：to拉黑了from
 func TakeBlackReq(c *gin.Context) {
@@ -230,13 +249,13 @@ func CancelBlack(c *gin.Context) {
 		if modifyErr != nil {
 			c.JSON(http.StatusUnprocessableEntity, gin.H{
 				"code": 2003,
-				"msg":  "拉黑失败",
+				"msg":  "取消失败",
 			})
 		} else {
 			// 推送给发起拉黑与被拉黑用户双方，因为前端双方都需要这个status进行拦截黑名单发送聊天操作
 			c.JSON(http.StatusOK, gin.H{
 				"code": 200,
-				"msg":  "拉黑成功",
+				"msg":  "取消成功",
 				"data": FormatFriendList(rightRelation.From, c),
 			})
 			// 推送给被拉黑用户to
@@ -270,11 +289,11 @@ func CancelBlack(c *gin.Context) {
 
 // GetBlackStatus 获取当前用户是否拉黑对方
 func GetBlackStatus(c *gin.Context) {
-	FromID:=c.Query("from")
-	ToID:=c.Query("to")
+	FromID := c.Query("from")
+	ToID := c.Query("to")
 
-	rightRelation, _ := model.GetRightRelationRecord(FromID,ToID)
-	log.Println("getblack",FromID)
+	rightRelation, _ := model.GetRightRelationRecord(FromID, ToID)
+	log.Println("getblack", FromID)
 	if FromID == rightRelation.From {
 		if rightRelation.Status == 4 {
 			// 当前用户确实拉黑了对方

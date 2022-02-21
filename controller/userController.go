@@ -178,7 +178,7 @@ func SearchUser(c *gin.Context) {
 			"msg":  "搜索成功",
 			"data": gin.H{
 				"userInfo": userInfo,
-				"status":   -99,
+				"Status":   -99,
 				"isMaster": true,
 			},
 		})
@@ -201,7 +201,7 @@ func SearchUser(c *gin.Context) {
 			"msg":  "已添加该用户",
 			"data": gin.H{
 				"userInfo": userInfo,
-				"status":   rightRelation.Status,
+				"Status":   rightRelation.Status,
 				"isMaster": isMaster,
 			},
 		})
@@ -218,7 +218,7 @@ func SearchUser(c *gin.Context) {
 			"msg":  "搜索成功",
 			"data": gin.H{
 				"userInfo": userInfo,
-				"status":   Status,
+				"Status":   Status,
 				"isMaster": isMaster,
 			},
 		})
