@@ -6,9 +6,9 @@ import (
 )
 
 // Message is return msg
-type Message struct {ID        int       `gorm:"column:id;unique;not null;primary_key;AUTO_INCREMENT"`
-
-	MsgID     int       `gorm:"column:msgid;unique;not null"`
+type Message struct {
+	ID        int       `gorm:"column:id;unique;not null;primary_key;AUTO_INCREMENT"`
+	MsgID     string    `gorm:"column:msgid;unique;not null"`
 	Sender    string    `gorm:"column:sender;unique;not null" json:"sender"`       //  发送者唯一id
 	Recipient string    `gorm:"column:recipient;unique;not null" json:"recipient"` //	接收者唯一id
 	Content   string    `json:"content"`

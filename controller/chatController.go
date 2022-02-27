@@ -2,65 +2,58 @@ package controller
 
 import (
 	"chatApp_backend/model"
-	"fmt"
+	_type "chatApp_backend/type"
+	"chatApp_backend/ws"
+	"encoding/json"
 	"github.com/gin-gonic/gin"
+	"log"
 	"net/http"
-	"path"
 )
 
-func ModifyMsgReadState(c*gin.Context)  {
-	msgFrom:=c.Query("msgFrom")
-	msgTo:=c.Query("msgTo")
-	err:=model.ModifyMsgState(msgFrom,msgTo)
+func ModifyMsgReadState(c *gin.Context) {
+	msgFrom := c.Query("msgFrom")
+	msgTo := c.Query("msgTo")
+	err := model.ModifyMsgState(msgFrom, msgTo)
 	if err != nil {
-		c.JSON(http.StatusUnprocessableEntity,gin.H{
-			"code":444,
-			"state":"false",
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"code":  444,
+			"state": "false",
 		})
 	}
-	c.JSON(http.StatusOK,gin.H{
-		"code":200,
-		"state":"success",
+	c.JSON(http.StatusOK, gin.H{
+		"code":  200,
+		"state": "success",
 	})
 }
 
-func GetChat(c * gin.Context)  {
-	msgs,err:=model.GetChatContent()
+func GetChat(c *gin.Context) {
+	msgs, err := model.GetChatContent()
 	if err != nil {
-		c.JSON(http.StatusUnprocessableEntity,gin.H{
-			"code":444,
-			"state":"false",
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"code":  444,
+			"state": "false",
 		})
 	}
 
-	c.JSON(http.StatusOK,gin.H{
-		"code":200,
-		"chatList":msgs,
+	c.JSON(http.StatusOK, gin.H{
+		"code":     200,
+		"chatList": msgs,
 	})
 }
 
-func asdSaveImg( c *gin.Context)  {
-	f,err:=c.FormFile("file")
-	if err != nil {
-		fmt.Println(err)
-		c.JSON(200,gin.H{
-			"status":"err",
-		})
-		return
+
+
+// PushChatMsg2User 将聊天内容通过ws推送给在线用户
+func PushChatMsg2User(pushedUserid string, messageData model.Message) {
+	pushedObj := &_type.BePushedMsg{
+		DataType:   "msg",
+		BePushedID: pushedUserid,
+		Message:    messageData,
 	}
-	dst:=path.Join("ttt/statics/",f.Filename)//上传文件保存路径
-	err=c.SaveUploadedFile(f,dst)
-	//url="./"+dst;
-	model.ImgUrl="http://127.0.0.1:9998/api/showImg?imageName="+dst
+
+	msgByte, err := json.Marshal(pushedObj)
 	if err != nil {
-		c.JSON(200,gin.H{"status":err.Error()})
-		return
-	}else {
-		c.JSON(200,gin.H{
-			"status":"upload ok!",
-			"url":model.ImgUrl,
-		})
+		log.Println("解析推送消息出错")
 	}
+	ws.Manager.Broadcast <- msgByte
 }
-
-

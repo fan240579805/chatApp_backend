@@ -49,12 +49,12 @@ func main() {
 		apiGroup.GET("/getBlackStatus", middle.JWTAuthMiddleware(), controller.GetBlackStatus)
 
 		apiGroup.POST("/searchUser/:username",middle.JWTAuthMiddleware(),controller.SearchUser)
-		//apiGroup.GET("/userChatlist",middle.JWTAuthMiddleware(),controller.GetChatList)
+		apiGroup.GET("/uploadChatImg'",middle.JWTAuthMiddleware(),controller.UploadChatImage)
 		//apiGroup.GET("/getChatList",middle.JWTAuthMiddleware(),controller.GetChat)
 		apiGroup.POST("/modifyAvatar",middle.JWTAuthMiddleware(),controller.ModifyAvatar)
 		apiGroup.GET("/showImg", controller.ShowImage)
 		apiGroup.GET("/AJAX/:id", testAJAX)
-		apiGroup.POST("/uploadFile", controller.UploadImage)
+		//apiGroup.POST("/uploadFile", controller.UploadImage)
 	}
 
 	r.Run(":9998")

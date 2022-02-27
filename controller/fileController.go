@@ -3,11 +3,14 @@ package controller
 import (
 	"chatApp_backend/_const"
 	"chatApp_backend/model"
+	"chatApp_backend/utils"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"path"
+	"time"
 )
 
 // ShowImage 展示图片接口
@@ -20,7 +23,7 @@ func ShowImage(c *gin.Context) {
 func ModifyAvatar(c *gin.Context) {
 	uid := c.PostForm("userid")
 	InfoAttr := c.PostForm("InfoAttr")
-	_, fileHeader := SaveAvatarImage(c)
+	_, fileHeader := SaveImageToDisk(c, _const.AVATAR_PATH)
 	newUserInfo, err := model.ModifyChatUserInfo(uid, &model.ModifyAction{
 		InfoAttr:  InfoAttr,
 		Playloads: fileHeader.Filename,
@@ -41,17 +44,50 @@ func ModifyAvatar(c *gin.Context) {
 	}
 }
 
-// UploadImage 上传图片接口
-func UploadImage(c *gin.Context) {
-	//_, fileHeader := SaveImage(c)
-	// 存入数据库 待补充
-	//c.JSONP(200, gin.H{
-	//	"Filename": fileHeader.Filename,
-	//})
+// UploadChatImage 上传聊天图片接口, 并转发给被发送图片的用户
+func UploadChatImage(c *gin.Context) {
+	userid, _ := c.Get("userID")
+	recipient := c.PostForm("recipient")
+	chatImgPath, _ := SaveImageToDisk(c, _const.CHAT_IMG_PATH)
+	chatImgUrl := _const.BASE_URL + "/api/showImg?imageName=" + chatImgPath
+	insertErr := model.InsertFile(chatImgUrl, userid.(string), "img", "图片")
+	if insertErr != nil {
+		log.Println("file存入失败")
+		c.JSON(http.StatusOK, gin.H{
+			"code": 2004,
+			"msg":  "file存入失败",
+		})
+	}
+	message := model.Message{
+		MsgID:     "msgID_" + utils.UniqueId(),
+		Sender:    userid.(string),
+		Recipient: recipient,
+		Content:   chatImgUrl,
+		SendTime:  time.Now().UTC().Unix(),
+		Type:      "img",
+	}
+	saveMsgErr := model.AddMessageRecord(message)
+	if saveMsgErr != nil {
+		log.Println("聊天图片存入数据库失败")
+		c.JSON(http.StatusOK, gin.H{
+			"code": 2004,
+			"msg":  "聊天图片存入数据库失败",
+		})
+	}
+	if insertErr == nil && saveMsgErr == nil {
+		// 存入数据库 待补充
+		c.JSON(200, gin.H{
+			"code": 200,
+			"msg":  "发送成功",
+			"data": chatImgUrl,
+		})
+		PushChatMsg2User(recipient, message)
+	}
+
 }
 
-// SaveAvatarImage 图片存储到服务器磁盘func
-func SaveAvatarImage(c *gin.Context) (string, *multipart.FileHeader) {
+// SaveImageToDisk 图片存储到服务器磁盘func
+func SaveImageToDisk(c *gin.Context, diskPath string) (string, *multipart.FileHeader) {
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
 		fmt.Printf("解析formdata出错err：", err.Error())
@@ -60,7 +96,7 @@ func SaveAvatarImage(c *gin.Context) (string, *multipart.FileHeader) {
 		})
 		return "", nil
 	}
-	dst := path.Join(_const.AVATAR_PATH, fileHeader.Filename) //上传文件保存路径
+	dst := path.Join(diskPath, fileHeader.Filename) //上传文件保存路径
 
 	saveError := c.SaveUploadedFile(fileHeader, dst)
 	if saveError != nil {

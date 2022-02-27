@@ -17,7 +17,7 @@ func PostRegister(c *gin.Context) {
 	email := c.PostForm("Email")
 	nickname := c.PostForm("NickName")
 	password := c.PostForm("PassWord")
-	avatarPath, _ := SaveAvatarImage(c)
+	avatarPath, _ := SaveImageToDisk(c, _const.AVATAR_PATH)
 	var u1 = &model.User{
 		UserID:   userid,
 		Username: username,
@@ -171,7 +171,7 @@ func SearchUser(c *gin.Context) {
 			"msg":  "用户不存在",
 		})
 	}
-	if userid.(string) == userInfo.UserID{
+	if userid.(string) == userInfo.UserID {
 		// 用户搜索自己，返回自己
 		c.JSON(http.StatusOK, gin.H{
 			"code": 200,
@@ -210,7 +210,7 @@ func SearchUser(c *gin.Context) {
 		if rightRelation.From == "" {
 			// 两个用户从未建立关系
 			Status = 0
-		}else {
+		} else {
 			Status = rightRelation.Status
 		}
 		c.JSON(http.StatusOK, gin.H{
