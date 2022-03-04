@@ -50,14 +50,14 @@ func UploadChatImage(c *gin.Context) {
 	recipient := c.PostForm("recipient")
 	chatImgPath, _ := SaveImageToDisk(c, _const.CHAT_IMG_PATH)
 	chatImgUrl := _const.BASE_URL + "/api/showImg?imageName=" + chatImgPath
-	insertErr := model.InsertFile(chatImgUrl, userid.(string), "img", "图片")
-	if insertErr != nil {
-		log.Println("file存入失败")
-		c.JSON(http.StatusOK, gin.H{
-			"code": 2004,
-			"msg":  "file存入失败",
-		})
-	}
+	//insertErr := model.InsertFile(chatImgUrl, userid.(string), "img", "图片")
+	//if insertErr != nil {
+	//	log.Println("file存入失败")
+	//	c.JSON(http.StatusOK, gin.H{
+	//		"code": 2004,
+	//		"msg":  "file存入失败",
+	//	})
+	//}
 	message := model.Message{
 		MsgID:     "msgID_" + utils.UniqueId(),
 		Sender:    userid.(string),
@@ -74,8 +74,7 @@ func UploadChatImage(c *gin.Context) {
 			"msg":  "聊天图片存入数据库失败",
 		})
 	}
-	if insertErr == nil && saveMsgErr == nil {
-		// 存入数据库 待补充
+	if saveMsgErr == nil {
 		c.JSON(200, gin.H{
 			"code": 200,
 			"msg":  "发送成功",

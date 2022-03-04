@@ -1,6 +1,7 @@
 package ws
 
 import (
+	"chatApp_backend/controller"
 	"chatApp_backend/model"
 	_type "chatApp_backend/type"
 	"encoding/json"
@@ -12,7 +13,7 @@ type ClientManger struct {
 	Register   chan *Client
 	UnRegister chan *Client
 	Broadcast  chan []byte
-	PushChat   chan []byte
+	ChatChan   chan []byte
 	FriendChan chan []byte
 }
 
@@ -21,8 +22,8 @@ var Manager = ClientManger{
 	Register:   make(chan *Client),
 	UnRegister: make(chan *Client),
 	Broadcast:  make(chan []byte), // 传递消息message的管道
-	PushChat:   make(chan []byte), // 推送chat聊天框给对方的管道
-	FriendChan: make(chan []byte), // 推送chat聊天框给对方的管道
+	ChatChan:   make(chan []byte), // 推送chat聊天框给对方的管道
+	FriendChan: make(chan []byte), // 推送firendReq给对方的管道
 }
 
 func (Manager *ClientManger) Start() {
@@ -44,35 +45,55 @@ func (Manager *ClientManger) Start() {
 				close(client.Send)
 				delete(Manager.Clients, client.ID)
 			}
-		case message := <-Manager.Broadcast:
-			MessageStruct := model.Message{}
-			json.Unmarshal(message, &MessageStruct)
-			for id, conn := range Manager.Clients {
-				// 如果该消息的接收者 id 等于该 client 的 uid ,则将该消息发往该 client
+
+		case WsMessageObj := <-Manager.Broadcast:
+			MessageChatStruct := _type.WsMessageObj{}
+			json.Unmarshal(WsMessageObj, &MessageChatStruct)
+			// 判断一下对方是否登录
+			if !otherUserIsLogin(MessageChatStruct.Message.Recipient) {
 				// 连接 Clients[MessageStruct.Recipient] 不存在，表示消息接收者没有登录 ，未读消息存入数据库
 				// 并且给chat数据记录未读数量+1
-				if id != MessageStruct.Recipient {
-					// 处理chat表逻辑
+				controller.ModifyUnRead(MessageChatStruct.ChatID, true)
+			}
+
+			for id, conn := range Manager.Clients {
+				// 如果该消息的接收者 id 等于该 client 的 uid ,则将该消息发往该 client
+				if id != MessageChatStruct.Message.Recipient {
+					// 直接跳转下一次循环
 					continue
 				}
+				messageBodyByte, _ := json.Marshal(&MessageChatStruct.Message)
 				select {
 				// message 发给接收方
 				// 如果能发送给接收方 ， 说明接收方 登陆了
-				case conn.Send <- message:
-					// 只要能够互相通过 conn.Send 发送的话，就直接将消息置为已读 ，这样的话不会出现
-					// 两个人正在互相聊天中可互相的消息都是未读的情况，但是有点冗余
-					_ = model.ModifyMsgState(MessageStruct.Sender, MessageStruct.Recipient)
+				case conn.Send <- messageBodyByte:
+					// 登录了，也要chat unread++ ，因为前端需要全局小红点来提示已登录用户
+					controller.ModifyUnRead(MessageChatStruct.ChatID, true)
+					// push给对方一个chat  ***!前端结合recentMsg是否是自己发的来确定是否展示小红点，以及是否清除小红点
+					chatRoom, _ := model.SelectChatRecord(MessageChatStruct.ChatID)
+					// 获取自身的简要信息,以便发给对方
+					userProfile, _ := model.SelectUser(chatRoom.Owner)
+					var chatItem = &_type.ChatItem{
+						ChatID:           chatRoom.ChatID,
+						RecentMsg:        chatRoom.RecentMsg,
+						ChatToUserName:   userProfile.Username,
+						ChatToUserID:     userProfile.UserID,
+						ChatToUserAvatar: userProfile.Avatar,
+						RecentTime:       chatRoom.UpdatedAt,
+					}
+					chatItemByte, _ := json.Marshal(&chatItem)
+					// push
+					conn.Send <- chatItemByte
 
 				default:
 					close(conn.Send)
 					delete(Manager.Clients, conn.ID)
 				}
-
 			}
+
 		case newFriendDetail := <-Manager.FriendChan:
 			newPushObject := _type.BePushedFriend{}
 			json.Unmarshal(newFriendDetail, &newPushObject)
-			log.Println(newPushObject)
 			for id, conn := range Manager.Clients {
 				// 如果该消息的接收者 id 等于该 client 的 uid ,则将新的好友列表发往该 client
 				// 连接 Clients[newPushObject.BePushedID] 不存在，表示被推送新好友列表的用户登录 ，进行相应的离线处理
@@ -94,4 +115,14 @@ func (Manager *ClientManger) Start() {
 			}
 		}
 	}
+}
+
+// otherUserIsLogin 判断对方用户是否在线
+func otherUserIsLogin(otherID string) bool {
+	for uid, _ := range Manager.Clients {
+		if otherID == uid {
+			return true
+		}
+	}
+	return false
 }

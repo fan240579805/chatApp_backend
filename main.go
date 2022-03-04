@@ -49,7 +49,11 @@ func main() {
 		apiGroup.GET("/getBlackStatus", middle.JWTAuthMiddleware(), controller.GetBlackStatus)
 
 		apiGroup.POST("/searchUser/:username",middle.JWTAuthMiddleware(),controller.SearchUser)
+
+		apiGroup.GET("/getChatList", middle.JWTAuthMiddleware(), controller.GetMineChatList)
 		apiGroup.GET("/uploadChatImg'",middle.JWTAuthMiddleware(),controller.UploadChatImage)
+		apiGroup.GET("/makeChat'",middle.JWTAuthMiddleware(),controller.MakeChat)
+
 		//apiGroup.GET("/getChatList",middle.JWTAuthMiddleware(),controller.GetChat)
 		apiGroup.POST("/modifyAvatar",middle.JWTAuthMiddleware(),controller.ModifyAvatar)
 		apiGroup.GET("/showImg", controller.ShowImage)

@@ -1,7 +1,10 @@
 package ws
 
 import (
+	"chatApp_backend/controller"
 	"chatApp_backend/model"
+	_type "chatApp_backend/type"
+	"chatApp_backend/utils"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -55,7 +58,6 @@ func WsHandler(c *gin.Context) {
 	go client.Write()
 }
 
-
 func (c *Client) Read() {
 	// 延迟关闭客户端连接
 	defer func() {
@@ -64,37 +66,39 @@ func (c *Client) Read() {
 	}()
 	// 不断从连接中读取message
 	for {
-		_, message, err := c.Socket.ReadMessage()
+		_, messageChatObj, err := c.Socket.ReadMessage()
 		if err != nil {
 			Manager.UnRegister <- c
 			c.Socket.Close()
 			break
 		}
-		log.Printf("读取到客户端的信息:%s", string(message))
+		log.Printf("读取到客户端的信息:%s", string(messageChatObj))
 
 		// 将发送时间赋给message
-		var m1 model.Message
-		json.Unmarshal(message, &m1)
-		m1.SendTime = time.Now().Unix()
-
+		var wsMsgObj _type.WsMessageObj
+		json.Unmarshal(messageChatObj, &wsMsgObj)
+		wsMsgObj.Message.SendTime = time.Now()
+		wsMsgObj.Message.MsgID = "MsgID_" + utils.UniqueId()
 		//if m1.Type == "img" {
 		//	m1.Image = model.ImgUrl
 		//}
 
-		message1, _ := json.Marshal(&m1)
+		messageBody, _ := json.Marshal(&wsMsgObj.Message)
 
 		// 发给自身
-		c.Send <- message1
+		c.Send <- messageBody
 
 		// 存入数据库
 		msg := model.Message{}
-		json.Unmarshal(message1, &msg)
-		err = model.AddMessageRecord(msg)
-		if err != nil {
+		json.Unmarshal(messageBody, &msg)
+		AddMsgErr := model.AddMessageRecord(msg)
+		if AddMsgErr != nil {
 			log.Println(err)
 		}
+		// 更新最近消息
+		controller.ModifyRecentMsg(wsMsgObj.ChatID, string(messageBody))
 
-		Manager.Broadcast <- message1
+		Manager.Broadcast <- messageChatObj
 	}
 }
 
