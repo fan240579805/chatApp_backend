@@ -10,6 +10,7 @@ type BePushedMsg struct {
 	DataType   string // 区分websocket要推送的数据是好友类型还是消息类型
 	BePushedID string
 	Message    model.Message
+	UserInfo   *model.UserInfo
 }
 
 // ChatItem 聊天框item
@@ -23,6 +24,7 @@ type ChatItem struct {
 }
 
 type WsMessageObj struct {
-	ChatID           string
-	Message    model.Message
+	DataType string // 区分websocket要推送的数据是好友类型还是消息类型
+	ChatID   string
+	Message  model.Message
 }

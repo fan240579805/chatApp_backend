@@ -1,7 +1,7 @@
 package ws
 
 import (
-	"chatApp_backend/controller"
+	"chatApp_backend/common"
 	"chatApp_backend/model"
 	_type "chatApp_backend/type"
 	"encoding/json"
@@ -53,7 +53,7 @@ func (Manager *ClientManger) Start() {
 			if !otherUserIsLogin(MessageChatStruct.Message.Recipient) {
 				// 连接 Clients[MessageStruct.Recipient] 不存在，表示消息接收者没有登录 ，未读消息存入数据库
 				// 并且给chat数据记录未读数量+1
-				controller.ModifyUnRead(MessageChatStruct.ChatID, true)
+				common.ModifyUnRead(MessageChatStruct.ChatID, true)
 			}
 
 			for id, conn := range Manager.Clients {
@@ -62,13 +62,20 @@ func (Manager *ClientManger) Start() {
 					// 直接跳转下一次循环
 					continue
 				}
-				messageBodyByte, _ := json.Marshal(&MessageChatStruct.Message)
+				// 格式统一处理成bePushed格式
+				userInfo, _ := model.SelectUser(MessageChatStruct.Message.Sender)
+				bePushedMsg := _type.BePushedMsg{
+					DataType:   "msg",
+					BePushedID: MessageChatStruct.Message.Recipient,
+					Message:    MessageChatStruct.Message,
+					UserInfo: userInfo,
+				}
+				messageBodyByte, _ := json.Marshal(&bePushedMsg)
 				select {
-				// message 发给接收方
-				// 如果能发送给接收方 ， 说明接收方 登陆了
+				// message 发给接收方; 如果能发送给接收方 ， 说明接收方 登陆了
 				case conn.Send <- messageBodyByte:
 					// 登录了，也要chat unread++ ，因为前端需要全局小红点来提示已登录用户
-					controller.ModifyUnRead(MessageChatStruct.ChatID, true)
+					common.ModifyUnRead(MessageChatStruct.ChatID, true)
 					// push给对方一个chat  ***!前端结合recentMsg是否是自己发的来确定是否展示小红点，以及是否清除小红点
 					chatRoom, _ := model.SelectChatRecord(MessageChatStruct.ChatID)
 					// 获取自身的简要信息,以便发给对方

@@ -47,7 +47,10 @@ func ModifyAvatar(c *gin.Context) {
 // UploadChatImage 上传聊天图片接口, 并转发给被发送图片的用户
 func UploadChatImage(c *gin.Context) {
 	userid, _ := c.Get("userID")
+	chatID := c.PostForm("chatID")
 	recipient := c.PostForm("recipient")
+	sender := c.PostForm("sender")
+
 	chatImgPath, _ := SaveImageToDisk(c, _const.CHAT_IMG_PATH)
 	chatImgUrl := _const.BASE_URL + "/api/showImg?imageName=" + chatImgPath
 	//insertErr := model.InsertFile(chatImgUrl, userid.(string), "img", "图片")
@@ -63,7 +66,7 @@ func UploadChatImage(c *gin.Context) {
 		Sender:    userid.(string),
 		Recipient: recipient,
 		Content:   chatImgUrl,
-		SendTime:  time.Now().UTC().Unix(),
+		SendTime:  time.Now(),
 		Type:      "img",
 	}
 	saveMsgErr := model.AddMessageRecord(message)
@@ -80,7 +83,10 @@ func UploadChatImage(c *gin.Context) {
 			"msg":  "发送成功",
 			"data": chatImgUrl,
 		})
-		PushChatMsg2User(recipient, message)
+		// 图片推送给自己
+		PushChatMsg2User(chatID, sender, message)
+		// 推送给别人
+		PushChatMsg2User(chatID, recipient, message)
 	}
 
 }

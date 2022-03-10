@@ -43,21 +43,6 @@ func MakeChat(c *gin.Context) {
 	}
 }
 
-// ModifyRecentMsg 更新最近消息
-func ModifyRecentMsg(chatID string, newRecentMsg string) {
-	err := model.UpdateRecentMsg(chatID, newRecentMsg)
-	if err != nil {
-		log.Println(err.Error())
-	}
-}
-
-// ModifyUnRead 更新聊天框未读数量  isAdd = true 表示在原来基础上 + 1
-func ModifyUnRead(chatID string, isAdd bool) {
-	err := model.UpdateUnRead(chatID, isAdd)
-	if err != nil {
-		log.Println(err.Error())
-	}
-}
 
 // GetMineChatList 获取聊天列表
 func GetMineChatList(c *gin.Context) {
@@ -120,14 +105,16 @@ func FormatChatList(userid string, c *gin.Context) []*_type.ChatItem {
 }
 
 // PushChatMsg2User 将聊天内容通过ws推送给在线用户
-func PushChatMsg2User(pushedUserid string, messageData model.Message) {
-	pushedObj := &_type.BePushedMsg{
-		DataType:   "msg",
-		BePushedID: pushedUserid,
-		Message:    messageData,
-	}
+func PushChatMsg2User(chatID string, bePushedID string, messageData model.Message) {
 
-	msgByte, err := json.Marshal(pushedObj)
+	var wsMsgObj _type.WsMessageObj
+	wsMsgObj.DataType = "msg"
+	wsMsgObj.Message = messageData
+	wsMsgObj.ChatID = chatID
+	// 修改消息的recipient，因为websocket-hub只认 Recipient 进行推送，此时修改Recipient也不担心数据库字段被更改，因为以及存入数据库了
+	wsMsgObj.Message.Recipient = bePushedID
+
+	msgByte, err := json.Marshal(wsMsgObj)
 	if err != nil {
 		log.Println("解析推送消息出错")
 	}

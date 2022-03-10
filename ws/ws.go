@@ -1,7 +1,7 @@
 package ws
 
 import (
-	"chatApp_backend/controller"
+	"chatApp_backend/common"
 	"chatApp_backend/model"
 	_type "chatApp_backend/type"
 	"chatApp_backend/utils"
@@ -77,13 +77,20 @@ func (c *Client) Read() {
 		// 将发送时间赋给message
 		var wsMsgObj _type.WsMessageObj
 		json.Unmarshal(messageChatObj, &wsMsgObj)
+		wsMsgObj.DataType = "msg"
 		wsMsgObj.Message.SendTime = time.Now()
 		wsMsgObj.Message.MsgID = "MsgID_" + utils.UniqueId()
-		//if m1.Type == "img" {
-		//	m1.Image = model.ImgUrl
-		//}
+		// 格式统一处理成bePushed格式
+		// 获取自己的头像等用户信息
+		userInfo, _ := model.SelectUser(wsMsgObj.Message.Sender)
+		bePushedMsg := _type.BePushedMsg{
+			DataType:   "msg",
+			BePushedID: wsMsgObj.Message.Sender,
+			Message:    wsMsgObj.Message,
+			UserInfo:   userInfo,
+		}
 
-		messageBody, _ := json.Marshal(&wsMsgObj.Message)
+		messageBody, _ := json.Marshal(&bePushedMsg)
 
 		// 发给自身
 		c.Send <- messageBody
@@ -95,9 +102,10 @@ func (c *Client) Read() {
 		if AddMsgErr != nil {
 			log.Println(err)
 		}
-		// 更新最近消息
-		controller.ModifyRecentMsg(wsMsgObj.ChatID, string(messageBody))
+		// 将消息body转化成json字符串，更新最近消息
+		common.ModifyRecentMsg(wsMsgObj.ChatID, string(messageBody))
 
+		// 消息流转给管道，转发给对应用户
 		Manager.Broadcast <- messageChatObj
 	}
 }
