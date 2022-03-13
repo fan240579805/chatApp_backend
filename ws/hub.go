@@ -74,23 +74,27 @@ func (Manager *ClientManger) Start() {
 				select {
 				// message 发给接收方; 如果能发送给接收方 ， 说明接收方 登陆了
 				case conn.Send <- messageBodyByte:
-					// 登录了，也要chat unread++ ，因为前端需要全局小红点来提示已登录用户
-					common.ModifyUnRead(MessageChatStruct.ChatID, true)
-					// push给对方一个chat  ***!前端结合recentMsg是否是自己发的来确定是否展示小红点，以及是否清除小红点
-					chatRoom, _ := model.SelectChatRecord(MessageChatStruct.ChatID)
-					// 获取自身的简要信息,以便发给对方
-					userProfile, _ := model.SelectUser(MessageChatStruct.Message.Recipient)
-					var chatItem = &_type.ChatItem{
-						ChatID:           chatRoom.ChatID,
-						RecentMsg:        chatRoom.RecentMsg,
-						ChatToNickName:   userProfile.Username,
-						ChatToUserID:     userProfile.UserID,
-						ChatToUserAvatar: userProfile.Avatar,
-						RecentTime:       chatRoom.UpdatedAt.UnixMilli(),
+					// 发送聊天图片，message的recipient会t改为sender自己，目的是为了推送给自己是自己展示
+					// 这个if是为了过滤的这种情况
+					if MessageChatStruct.Message.Recipient != MessageChatStruct.Message.Sender{
+						// 登录了，也要chat unread++ ，因为前端需要全局小红点来提示已登录用户
+						common.ModifyUnRead(MessageChatStruct.ChatID, true)
+						// push给对方一个chat  ***!前端结合recentMsg是否是自己发的来确定是否展示小红点，以及是否清除小红点
+						chatRoom, _ := model.SelectChatRecord(MessageChatStruct.ChatID)
+						// 获取自身的简要信息,以便发给对方
+						userProfile, _ := model.SelectUser(MessageChatStruct.Message.Recipient)
+						var chatItem = &_type.ChatItem{
+							ChatID:           chatRoom.ChatID,
+							RecentMsg:        chatRoom.RecentMsg,
+							ChatToNickName:   userProfile.Username,
+							ChatToUserID:     userProfile.UserID,
+							ChatToUserAvatar: userProfile.Avatar,
+							RecentTime:       chatRoom.UpdatedAt.UnixMilli(),
+						}
+						chatItemByte, _ := json.Marshal(&chatItem)
+						// push
+						conn.Send <- chatItemByte
 					}
-					chatItemByte, _ := json.Marshal(&chatItem)
-					// push
-					conn.Send <- chatItemByte
 
 				default:
 					close(conn.Send)

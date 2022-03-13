@@ -144,7 +144,7 @@ func PushChatMsg2User(chatID string, bePushedID string, messageData model.Messag
 	wsMsgObj.DataType = "msg"
 	wsMsgObj.Message = messageData
 	wsMsgObj.ChatID = chatID
-	// 修改消息的recipient，因为websocket-hub只认 Recipient 进行推送，此时修改Recipient也不担心数据库字段被更改，因为以及存入数据库了
+	// 修改消息的recipient，因为websocket-hub只认 Recipient 进行推送，此时修改Recipient也不担心数据库字段被更改，因为已经存入数据库了
 	wsMsgObj.Message.Recipient = bePushedID
 
 	msgByte, err := json.Marshal(wsMsgObj)
