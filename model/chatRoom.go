@@ -96,12 +96,12 @@ func SelectChatList(userid string) ([]Chat, error) {
 	var mineChatList []Chat
 	var otherChatList []Chat
 	// 查询自己主动发起的chat列表
-	selectMineErr := dao.DB.Debug().Where("owner=?", userid).Find(&mineChatList).Error
+	selectMineErr := dao.DB.Debug().Where("ownerid=?", userid).Find(&mineChatList).Error
 	if selectMineErr != nil {
 		return mineChatList, selectMineErr
 	}
 	// 查询自己被动发起的chat列表
-	selectOtherErr := dao.DB.Debug().Where("other=?", userid).Find(&otherChatList).Error
+	selectOtherErr := dao.DB.Debug().Where("otherid=?", userid).Find(&otherChatList).Error
 	if selectOtherErr != nil {
 		return otherChatList, selectOtherErr
 	}

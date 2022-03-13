@@ -116,6 +116,7 @@ func FormatChatList(userid string, c *gin.Context) []*_type.ChatItem {
 					ChatToNickName:   userProfile.NickName,
 					ChatToUserID:     userProfile.UserID,
 					ChatToUserAvatar: userProfile.Avatar,
+					RecentTime:       chatRoom.UpdatedAt,
 				}
 			} else if chatRoom.Other == userid {
 				// 此时自己是被发起聊天的
@@ -127,6 +128,7 @@ func FormatChatList(userid string, c *gin.Context) []*_type.ChatItem {
 					ChatToNickName:   userProfile.NickName,
 					ChatToUserID:     userProfile.UserID,
 					ChatToUserAvatar: userProfile.Avatar,
+					RecentTime:       chatRoom.UpdatedAt,
 				}
 			}
 		}
