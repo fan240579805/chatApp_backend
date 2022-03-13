@@ -86,7 +86,7 @@ func (Manager *ClientManger) Start() {
 						ChatToNickName:   userProfile.Username,
 						ChatToUserID:     userProfile.UserID,
 						ChatToUserAvatar: userProfile.Avatar,
-						RecentTime:       chatRoom.UpdatedAt,
+						RecentTime:       chatRoom.UpdatedAt.UnixMilli(),
 					}
 					chatItemByte, _ := json.Marshal(&chatItem)
 					// push

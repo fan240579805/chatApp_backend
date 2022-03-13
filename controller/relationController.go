@@ -354,7 +354,7 @@ func FormatFriendList(userid string, c *gin.Context) []*_type.Friend {
 				userProfile, _ := model.SelectUser(relation.To)
 				friendList[i] = &_type.Friend{
 					FriendProfile: userProfile,
-					AddTime:       relation.CreatedAt,
+					AddTime:       relation.CreatedAt.UnixMilli(),
 					Status:        relation.Status,
 					IsMaster:      true,
 				}
@@ -364,7 +364,7 @@ func FormatFriendList(userid string, c *gin.Context) []*_type.Friend {
 				userProfile, _ := model.SelectUser(relation.From)
 				friendList[i] = &_type.Friend{
 					FriendProfile: userProfile,
-					AddTime:       relation.CreatedAt,
+					AddTime:       relation.CreatedAt.UnixMilli(),
 					Status:        relation.Status,
 					IsMaster:      false,
 				}
@@ -387,7 +387,7 @@ func PushFriendReq2user(rightRelation model.Relation, newFriendUserid string, pu
 	}
 	friend := &_type.Friend{
 		FriendProfile: userProfile,
-		AddTime:       rightRelation.CreatedAt,
+		AddTime:       rightRelation.CreatedAt.UnixMilli(),
 		Status:        rightRelation.Status,
 		IsMaster:      isMaster,
 	}

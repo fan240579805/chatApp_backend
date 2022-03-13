@@ -2,7 +2,6 @@ package _type
 
 import (
 	"chatApp_backend/model"
-	"time"
 )
 
 // BePushedMsg 推送给制定用户id的新的消息的结构体
@@ -20,7 +19,7 @@ type ChatItem struct {
 	ChatToNickName   string
 	ChatToUserID     string
 	ChatToUserAvatar string
-	RecentTime       time.Time
+	RecentTime       int64
 }
 
 type WsMessageObj struct {

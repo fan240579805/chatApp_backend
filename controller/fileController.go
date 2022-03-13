@@ -66,7 +66,7 @@ func UploadChatImage(c *gin.Context) {
 		Sender:    userid.(string),
 		Recipient: recipient,
 		Content:   chatImgUrl,
-		SendTime:  time.Now(),
+		SendTime:  time.Now().UnixMilli(),
 		Type:      "img",
 	}
 	saveMsgErr := model.AddMessageRecord(message)

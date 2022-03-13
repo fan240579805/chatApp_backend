@@ -41,7 +41,7 @@ func MakeChat(c *gin.Context) {
 			ChatToNickName:   userProfile.NickName,
 			ChatToUserID:     userProfile.UserID,
 			ChatToUserAvatar: userProfile.Avatar,
-			RecentTime:       existChat.UpdatedAt,
+			RecentTime:       existChat.UpdatedAt.UnixMilli(),
 		}
 		c.JSON(http.StatusOK, gin.H{
 			"code": 200,
@@ -64,7 +64,7 @@ func MakeChat(c *gin.Context) {
 				ChatToNickName:   userProfile.NickName,
 				ChatToUserID:     userProfile.UserID,
 				ChatToUserAvatar: userProfile.Avatar,
-				RecentTime:       chat.UpdatedAt,
+				RecentTime:       chat.UpdatedAt.UnixMilli(),
 			}
 			c.JSON(http.StatusOK, gin.H{
 				"code": 200,
@@ -116,7 +116,7 @@ func FormatChatList(userid string, c *gin.Context) []*_type.ChatItem {
 					ChatToNickName:   userProfile.NickName,
 					ChatToUserID:     userProfile.UserID,
 					ChatToUserAvatar: userProfile.Avatar,
-					RecentTime:       chatRoom.UpdatedAt,
+					RecentTime:       chatRoom.UpdatedAt.UnixMilli(),
 				}
 			} else if chatRoom.Other == userid {
 				// 此时自己是被发起聊天的
@@ -128,7 +128,7 @@ func FormatChatList(userid string, c *gin.Context) []*_type.ChatItem {
 					ChatToNickName:   userProfile.NickName,
 					ChatToUserID:     userProfile.UserID,
 					ChatToUserAvatar: userProfile.Avatar,
-					RecentTime:       chatRoom.UpdatedAt,
+					RecentTime:       chatRoom.UpdatedAt.UnixMilli(),
 				}
 			}
 		}

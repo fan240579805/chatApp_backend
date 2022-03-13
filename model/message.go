@@ -12,7 +12,7 @@ type Message struct {
 	Sender    string    `gorm:"column:sender;not null" json:"sender"`       //  发送者唯一id
 	Recipient string    `gorm:"column:recipient;not null" json:"recipient"` //	接收者唯一id
 	Content   string    `json:"content"`
-	SendTime  time.Time `json:"time"`
+	SendTime  int64     `json:"time"`
 	Type      string    `json:"type"` //消息类型 img: 图片 text: 文本 audio: 音频
 	CreatedAt time.Time `gorm:"column:createdat;default:null" json:"createdat"`
 	UpdatedAt time.Time `gorm:"column:updatedat;default:null" json:"updatedat"`

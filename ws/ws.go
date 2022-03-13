@@ -78,7 +78,7 @@ func (c *Client) Read() {
 		var wsMsgObj _type.WsMessageObj
 		json.Unmarshal(messageChatObj, &wsMsgObj)
 		wsMsgObj.DataType = "msg"
-		wsMsgObj.Message.SendTime = time.Now()
+		wsMsgObj.Message.SendTime = time.Now().UnixMilli()
 		wsMsgObj.Message.MsgID = "MsgID_" + utils.UniqueId()
 		// 格式统一处理成bePushed格式
 		// 获取自己的头像等用户信息
