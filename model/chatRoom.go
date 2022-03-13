@@ -34,6 +34,22 @@ func CreateChat(sender string, recipient string) (*Chat, error) {
 	return chat, nil
 }
 
+func CheckChatExist(sender string, recipient string) (Chat, error) {
+	var chat Chat
+	finderr1 := dao.DB.Debug().Where("ownerid = ? and otherid= ?", sender, recipient).First(&chat).Error
+	if finderr1 != nil {
+		// 说明没查到用例1，继续查
+		finderr2 := dao.DB.Debug().Where("ownerid = ? and otherid= ?", recipient, sender).First(&chat).Error
+		if finderr2 != nil {
+			return chat, finderr2
+		} else {
+			return chat, nil
+		}
+		return Chat{}, finderr1
+	}
+	return chat, nil
+}
+
 // UpdateUnRead 更新未读消息数量
 func UpdateUnRead(chatID string, isAdd bool) error {
 

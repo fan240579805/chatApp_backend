@@ -11,29 +11,37 @@ import (
 )
 
 type chatType struct {
-	sender    string
-	recipient string
+	Sender    string
+	Recipient string
 }
 
 // MakeChat 发起聊天
 func MakeChat(c *gin.Context) {
 	var chatParams chatType
 	c.ShouldBindJSON(&chatParams)
-	chat, err := model.CreateChat(chatParams.sender, chatParams.recipient)
-	if err != nil {
+	existChat, checkErr := model.CheckChatExist(chatParams.Sender, chatParams.Recipient)
+	if checkErr != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"code": 444,
 			"msg":  "发起聊天失败",
 		})
 	} else {
-		userProfile, _ := model.SelectUser(chat.Other)
+		var userProfile *model.UserInfo
+		// 已经存在一条聊天框，需要对发起makeChat请求的用户进行判断，看他是发起聊天的用户还是被发起聊天的用户
+		if existChat.Owner == chatParams.Sender {
+			// 此时 发起makeChat 的就是聊天框的拥有者，所以这时候需要把对方other的信息查询出来
+			userProfile, _ = model.SelectUser(existChat.Other)
+		} else {
+			// 此时 发起makeChat 的就是聊天框的被发起者，所以这时候需要把owner的信息查询出来
+			userProfile, _ = model.SelectUser(existChat.Owner)
+		}
 		chatItem := &_type.ChatItem{
-			ChatID:           chat.ChatID,
-			RecentMsg:        chat.RecentMsg,
-			ChatToUserName:   userProfile.NickName,
+			ChatID:           existChat.ChatID,
+			RecentMsg:        existChat.RecentMsg,
+			ChatToNickName:   userProfile.NickName,
 			ChatToUserID:     userProfile.UserID,
 			ChatToUserAvatar: userProfile.Avatar,
-			RecentTime:       chat.UpdatedAt,
+			RecentTime:       existChat.UpdatedAt,
 		}
 		c.JSON(http.StatusOK, gin.H{
 			"code": 200,
@@ -41,8 +49,31 @@ func MakeChat(c *gin.Context) {
 			"data": chatItem,
 		})
 	}
+	if existChat.ChatID == "" {
+		chat, err := model.CreateChat(chatParams.Sender, chatParams.Recipient)
+		if err != nil {
+			c.JSON(http.StatusUnprocessableEntity, gin.H{
+				"code": 444,
+				"msg":  "发起聊天失败",
+			})
+		} else {
+			userProfile, _ := model.SelectUser(chat.Other)
+			chatItem := &_type.ChatItem{
+				ChatID:           chat.ChatID,
+				RecentMsg:        chat.RecentMsg,
+				ChatToNickName:   userProfile.NickName,
+				ChatToUserID:     userProfile.UserID,
+				ChatToUserAvatar: userProfile.Avatar,
+				RecentTime:       chat.UpdatedAt,
+			}
+			c.JSON(http.StatusOK, gin.H{
+				"code": 200,
+				"msg":  "发起聊天成功",
+				"data": chatItem,
+			})
+		}
+	}
 }
-
 
 // GetMineChatList 获取聊天列表
 func GetMineChatList(c *gin.Context) {
@@ -82,7 +113,7 @@ func FormatChatList(userid string, c *gin.Context) []*_type.ChatItem {
 				chatList[i] = &_type.ChatItem{
 					ChatID:           chatRoom.ChatID,
 					RecentMsg:        chatRoom.RecentMsg,
-					ChatToUserName:   userProfile.NickName,
+					ChatToNickName:   userProfile.NickName,
 					ChatToUserID:     userProfile.UserID,
 					ChatToUserAvatar: userProfile.Avatar,
 				}
@@ -93,7 +124,7 @@ func FormatChatList(userid string, c *gin.Context) []*_type.ChatItem {
 				chatList[i] = &_type.ChatItem{
 					ChatID:           chatRoom.ChatID,
 					RecentMsg:        chatRoom.RecentMsg,
-					ChatToUserName:   userProfile.NickName,
+					ChatToNickName:   userProfile.NickName,
 					ChatToUserID:     userProfile.UserID,
 					ChatToUserAvatar: userProfile.Avatar,
 				}

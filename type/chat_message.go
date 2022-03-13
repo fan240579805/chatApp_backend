@@ -17,7 +17,7 @@ type BePushedMsg struct {
 type ChatItem struct {
 	ChatID           string
 	RecentMsg        string
-	ChatToUserName   string
+	ChatToNickName   string
 	ChatToUserID     string
 	ChatToUserAvatar string
 	RecentTime       time.Time

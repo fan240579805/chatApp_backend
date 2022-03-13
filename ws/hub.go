@@ -79,11 +79,11 @@ func (Manager *ClientManger) Start() {
 					// push给对方一个chat  ***!前端结合recentMsg是否是自己发的来确定是否展示小红点，以及是否清除小红点
 					chatRoom, _ := model.SelectChatRecord(MessageChatStruct.ChatID)
 					// 获取自身的简要信息,以便发给对方
-					userProfile, _ := model.SelectUser(chatRoom.Owner)
+					userProfile, _ := model.SelectUser(MessageChatStruct.Message.Recipient)
 					var chatItem = &_type.ChatItem{
 						ChatID:           chatRoom.ChatID,
 						RecentMsg:        chatRoom.RecentMsg,
-						ChatToUserName:   userProfile.Username,
+						ChatToNickName:   userProfile.Username,
 						ChatToUserID:     userProfile.UserID,
 						ChatToUserAvatar: userProfile.Avatar,
 						RecentTime:       chatRoom.UpdatedAt,
