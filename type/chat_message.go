@@ -15,11 +15,17 @@ type BePushedMsg struct {
 // ChatItem 聊天框item
 type ChatItem struct {
 	ChatID           string
-	RecentMsg        string
+	RecentMsg        model.Message
 	ChatToNickName   string
 	ChatToUserID     string
 	ChatToUserAvatar string
 	RecentTime       int64
+}
+
+type BePushedChat struct {
+	DataType   string // 区分websocket要推送的数据是聊天框
+	BePushedID string
+	Chat       ChatItem
 }
 
 type WsMessageObj struct {

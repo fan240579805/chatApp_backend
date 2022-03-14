@@ -2,20 +2,31 @@ package model
 
 import (
 	"chatApp_backend/dao"
+	"database/sql/driver"
+	"encoding/json"
 	"time"
 )
 
 // Message is return msg
 type Message struct {
-	ID        int       `gorm:"column:id;unique;not null;primary_key;AUTO_INCREMENT"`
-	MsgID     string    `gorm:"column:msgid;unique;not null"`
-	Sender    string    `gorm:"column:sender;not null" json:"sender"`       //  发送者唯一id
-	Recipient string    `gorm:"column:recipient;not null" json:"recipient"` //	接收者唯一id
+	MID       int       `gorm:"column:mid;primary_key;AUTO_INCREMENT"`
+	MsgID     string    `gorm:"column:msgid"`
+	Sender    string    `gorm:"column:sender" json:"sender"`       //  发送者唯一id
+	Recipient string    `gorm:"column:recipient" json:"recipient"` //	接收者唯一id
 	Content   string    `json:"content"`
 	SendTime  int64     `json:"time"`
 	Type      string    `json:"type"` //消息类型 img: 图片 text: 文本 audio: 音频
 	CreatedAt time.Time `gorm:"column:createdat;default:null" json:"createdat"`
 	UpdatedAt time.Time `gorm:"column:updatedat;default:null" json:"updatedat"`
+}
+
+func (m Message) Value() (driver.Value, error) {
+	return json.Marshal(m)
+}
+
+// Scan 实现方法
+func (m *Message) Scan(input interface{}) error {
+	return json.Unmarshal(input.([]byte), m)
 }
 
 //	AddMessageRecord 往聊天记录表添加记录
@@ -25,6 +36,15 @@ func AddMessageRecord(msg Message) error {
 		return err
 	}
 	return nil
+}
+
+func SelectMessageRecord(msgID string) (Message, error) {
+	var message Message
+	err := dao.DB.Where("msgid=?", msgID).First(&message).Error
+	if err != nil {
+		return Message{}, err
+	}
+	return message, nil
 }
 
 func ModifyMsgState(msgFrom string, msgTo string) error {

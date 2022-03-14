@@ -96,14 +96,15 @@ func (c *Client) Read() {
 		c.Send <- messageBody
 
 		// 存入数据库
-		msg := model.Message{}
-		json.Unmarshal(messageBody, &msg)
-		AddMsgErr := model.AddMessageRecord(msg)
+		AddMsgErr := model.AddMessageRecord(wsMsgObj.Message)
 		if AddMsgErr != nil {
 			log.Println(err)
 		}
-		// 将消息body转化成json字符串，更新最近消息
-		common.ModifyRecentMsg(wsMsgObj.ChatID, string(messageBody))
+		rightMsg, _ := model.SelectMessageRecord(wsMsgObj.Message.MsgID)
+		// 将消息转化成json字符串，更新最近消息
+		//msgByte, _ := json.Marshal(rightMsg)
+		//log.Println(string(msgByte))
+		common.ModifyRecentMsg(wsMsgObj.ChatID, rightMsg)
 
 		// 消息流转给管道，转发给对应用户
 		Manager.Broadcast <- messageChatObj

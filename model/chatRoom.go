@@ -13,7 +13,7 @@ type Chat struct {
 	Owner     string    `gorm:"column:ownerid"`          // 改对话框所有者, 发起聊天的用户的id
 	Other     string    `gorm:"column:otherid"`          // 被发起聊天的Other其他人id
 	Unread    int       `gorm:"column:unread;default:0"` // 会话未读数量
-	RecentMsg string    `gorm:"column:recentmsg"`        // 最近一条聊天记录用于展示聊天列表, Message类型的json字符串
+	RecentMsg Message   `gorm:"column:recentmsg" sql:"TYPE:json"`        // 最近一条聊天记录用于展示聊天列表, Message类型的json字符串
 	CreatedAt time.Time `gorm:"column:createdat;default:null" json:"createdat"`
 	UpdatedAt time.Time `gorm:"column:updatedat;default:null" json:"updatedat"`
 }
@@ -25,7 +25,17 @@ func CreateChat(sender string, recipient string) (*Chat, error) {
 		Owner:     sender,
 		Other:     recipient,
 		Unread:    0,
-		RecentMsg: "",
+		RecentMsg: Message{
+			MID: 0,
+			MsgID:     "",
+			Sender:    "",
+			Recipient: "",
+			Content:   "",
+			SendTime:  0,
+			Type:      "",
+			CreatedAt: time.Time{},
+			UpdatedAt: time.Time{},
+		},
 	}
 	err := dao.DB.Create(&chat).Error
 	if err != nil {
@@ -69,7 +79,7 @@ func UpdateUnRead(chatID string, isAdd bool) error {
 }
 
 // UpdateRecentMsg 更新最近消息
-func UpdateRecentMsg(chatID string, newMsg string) error {
+func UpdateRecentMsg(chatID string, newMsg Message) error {
 	chat, selectErr := SelectChatRecord(chatID)
 	if selectErr != nil {
 		return selectErr

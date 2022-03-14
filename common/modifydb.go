@@ -6,7 +6,7 @@ import (
 )
 
 // ModifyRecentMsg 更新最近消息
-func ModifyRecentMsg(chatID string, newRecentMsg string) {
+func ModifyRecentMsg(chatID string, newRecentMsg model.Message) {
 	err := model.UpdateRecentMsg(chatID, newRecentMsg)
 	if err != nil {
 		log.Println(err.Error())
