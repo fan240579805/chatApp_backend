@@ -55,6 +55,11 @@ func (Manager *ClientManger) Start() {
 				// 并且给chat数据记录未读数量+1
 				common.ModifyUnRead(MessageChatStruct.ChatID, true)
 			}
+			// 推送给自己新的聊天框
+			bePushedMyselfChat := getPushChatItem(MessageChatStruct.ChatID, MessageChatStruct.Message.Sender)
+			myselfChatItemByte, _ := json.Marshal(&bePushedMyselfChat)
+			Manager.Clients[MessageChatStruct.Message.Sender].Send <- myselfChatItemByte
+
 
 			for id, conn := range Manager.Clients {
 				// 如果该消息的接收者 id 等于该 client 的 uid ,则将该消息发往该 client
@@ -80,22 +85,7 @@ func (Manager *ClientManger) Start() {
 						// 登录了，也要chat unread++ ，因为前端需要全局小红点来提示已登录用户
 						common.ModifyUnRead(MessageChatStruct.ChatID, true)
 						// push给对方一个chat  ***!前端结合recentMsg是否是自己发的来确定是否展示小红点，以及是否清除小红点
-						chatRoom, _ := model.SelectChatRecord(MessageChatStruct.ChatID)
-						// 获取自身的简要信息,以便发给对方
-						userProfile, _ := model.SelectUser(MessageChatStruct.Message.Recipient)
-						var chatItem = &_type.ChatItem{
-							ChatID:           chatRoom.ChatID,
-							RecentMsg:        chatRoom.RecentMsg,
-							ChatToNickName:   userProfile.Username,
-							ChatToUserID:     userProfile.UserID,
-							ChatToUserAvatar: userProfile.Avatar,
-							RecentTime:       chatRoom.UpdatedAt.UnixMilli(),
-						}
-						var bePushedChat = &_type.BePushedChat{
-							DataType:   "chatItem",
-							BePushedID: chatItem.ChatToUserID,
-							Chat:       *chatItem,
-						}
+						bePushedChat := getPushChatItem(MessageChatStruct.ChatID, MessageChatStruct.Message.Recipient)
 						chatItemByte, _ := json.Marshal(&bePushedChat)
 						// push
 						conn.Send <- chatItemByte
@@ -141,4 +131,24 @@ func otherUserIsLogin(otherID string) bool {
 		}
 	}
 	return false
+}
+
+func getPushChatItem(chatID string, bePushedUser string) *_type.BePushedChat {
+	chatRoom, _ := model.SelectChatRecord(chatID)
+	// 获取自身的简要信息,以便发给对方
+	userProfile, _ := model.SelectUser(bePushedUser)
+	var chatItem = &_type.ChatItem{
+		ChatID:           chatRoom.ChatID,
+		RecentMsg:        chatRoom.RecentMsg,
+		ChatToNickName:   userProfile.NickName,
+		ChatToUserID:     userProfile.UserID,
+		ChatToUserAvatar: userProfile.Avatar,
+		RecentTime:       chatRoom.UpdatedAt.UnixMilli(),
+	}
+	var bePushedChat = &_type.BePushedChat{
+		DataType:   "chatItem",
+		BePushedID: chatItem.ChatToUserID,
+		Chat:       *chatItem,
+	}
+	return bePushedChat
 }

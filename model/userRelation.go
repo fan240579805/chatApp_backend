@@ -105,6 +105,32 @@ func GetRightRelationRecord(fromUserid string, toUserid string) (Relation, error
 	return relation, nil
 }
 
+
+// SelectBlacks 选出userid用户的黑名单列表
+func SelectBlacks(userid string) ([]Relation, error) {
+	// 发起该段好友relation的数组，from == userid
+	var mineBlacks []Relation
+	// 接受这段好友relation的数组  to == userid
+	var otherBlacks []Relation
+
+	// 2：此时请求blackList的用户在relation表中是from, 需要from主动拉黑即 status = 4 的好友
+	selectMineErr := dao.DB.Debug().Where("fromid=? AND status=?", userid, 4).Find(&mineBlacks).Error
+	if selectMineErr != nil {
+		return mineBlacks, selectMineErr
+	}
+	// 3：此时请求blackList的用户在relation表中是to, 需要to主动拉黑即 status = 5 的好友
+	selectOtherErr := dao.DB.Debug().Where("toid=? AND status=?", userid, 5).Find(&otherBlacks).Error
+	if selectOtherErr != nil {
+		return otherBlacks, selectOtherErr
+	}
+	if len(mineBlacks) > 0 || len(otherBlacks) > 0 {
+		return append(mineBlacks, otherBlacks...), nil
+	} else {
+		return []Relation{}, nil
+	}
+}
+
+
 // SelectFriends 选出userid用户的好友数组
 func SelectFriends(userid string) ([]Relation, error) {
 	// 发起该段好友relation的数组，from == userid

@@ -336,6 +336,27 @@ func GetBlackStatus(c *gin.Context) {
 	}
 }
 
+// GetBlackList 暂时是获取blacklist长度
+func GetBlackList(c *gin.Context) {
+	userid, _ := c.Get("userID")
+
+	blacks, err := model.SelectBlacks(userid.(string))
+	if err != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"code": 2003,
+			"msg":  "获取拉黑列表失败",
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"code": 200,
+			"msg":  "获取成功",
+			"data": gin.H{
+				"length": len(blacks),
+			},
+		})
+	}
+}
+
 // FormatFriendList 格式化获得 friendList ;  userid为当前登录用户
 func FormatFriendList(userid string, c *gin.Context) []*_type.Friend {
 	relationList, err := model.SelectFriends(userid)
