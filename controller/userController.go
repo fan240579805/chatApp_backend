@@ -6,6 +6,7 @@ import (
 	"chatApp_backend/middle"
 	"chatApp_backend/model"
 	"chatApp_backend/utils"
+	"chatApp_backend/ws"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -94,6 +95,16 @@ func PostLogin(c *gin.Context) {
 		})
 
 	}
+}
+
+func LogOut(c*gin.Context){
+	id, _ := c.Get("userID")
+	ws.UserExit(id.(string))
+	c.JSON(http.StatusOK, gin.H{
+		"code": 200,
+		"msg":  "登出成功",
+		"data": "",
+	})
 }
 
 // GetUserInfo 获取用户基本信息：昵称，头像等

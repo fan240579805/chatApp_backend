@@ -56,10 +56,9 @@ func (Manager *ClientManger) Start() {
 				common.ModifyUnRead(MessageChatStruct.ChatID, true)
 			}
 			// 推送给自己新的聊天框
-			bePushedMyselfChat := getPushChatItem(MessageChatStruct.ChatID, MessageChatStruct.Message.Sender)
+			bePushedMyselfChat := getPushChatItem(MessageChatStruct.ChatID, MessageChatStruct.Message.Sender, MessageChatStruct.Message.Recipient)
 			myselfChatItemByte, _ := json.Marshal(&bePushedMyselfChat)
 			Manager.Clients[MessageChatStruct.Message.Sender].Send <- myselfChatItemByte
-
 
 			for id, conn := range Manager.Clients {
 				// 如果该消息的接收者 id 等于该 client 的 uid ,则将该消息发往该 client
@@ -85,7 +84,7 @@ func (Manager *ClientManger) Start() {
 						// 登录了，也要chat unread++ ，因为前端需要全局小红点来提示已登录用户
 						common.ModifyUnRead(MessageChatStruct.ChatID, true)
 						// push给对方一个chat  ***!前端结合recentMsg是否是自己发的来确定是否展示小红点，以及是否清除小红点
-						bePushedChat := getPushChatItem(MessageChatStruct.ChatID, MessageChatStruct.Message.Recipient)
+						bePushedChat := getPushChatItem(MessageChatStruct.ChatID, MessageChatStruct.Message.Recipient, MessageChatStruct.Message.Sender)
 						chatItemByte, _ := json.Marshal(&bePushedChat)
 						// push
 						conn.Send <- chatItemByte
@@ -133,10 +132,10 @@ func otherUserIsLogin(otherID string) bool {
 	return false
 }
 
-func getPushChatItem(chatID string, bePushedUser string) *_type.BePushedChat {
+func getPushChatItem(chatID string, bePushedUser string, chatToUser string) *_type.BePushedChat {
 	chatRoom, _ := model.SelectChatRecord(chatID)
 	// 获取自身的简要信息,以便发给对方
-	userProfile, _ := model.SelectUser(bePushedUser)
+	userProfile, _ := model.SelectUser(chatToUser)
 	var chatItem = &_type.ChatItem{
 		ChatID:           chatRoom.ChatID,
 		RecentMsg:        chatRoom.RecentMsg,
@@ -147,8 +146,21 @@ func getPushChatItem(chatID string, bePushedUser string) *_type.BePushedChat {
 	}
 	var bePushedChat = &_type.BePushedChat{
 		DataType:   "chatItem",
-		BePushedID: chatItem.ChatToUserID,
+		BePushedID: bePushedUser,
 		Chat:       *chatItem,
 	}
 	return bePushedChat
+}
+
+
+// UserExit 用户登出
+func UserExit(userid string)  {
+	for uid, conn := range Manager.Clients {
+		if uid == userid{
+			log.Printf("用户离开:%s", uid)
+			close(conn.Send)
+			delete(Manager.Clients, conn.ID)
+			return
+		}
+	}
 }

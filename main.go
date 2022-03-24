@@ -34,6 +34,7 @@ func main() {
 		apiGroup.GET("/ws", ws.WsHandler)
 		apiGroup.POST("/Registerauth", controller.PostRegister)
 		apiGroup.POST("/login", controller.PostLogin)
+		apiGroup.POST("/logout", middle.JWTAuthMiddleware(), controller.LogOut)
 		apiGroup.POST("/AuthToken", middle.JWTAuthMiddleware(), controller.GetUserInfo)
 		apiGroup.GET("/userInfo", middle.JWTAuthMiddleware(), controller.GetUserInfo)
 		apiGroup.POST("/updateUserInfo", middle.JWTAuthMiddleware(), controller.UpdateUserInfo)
@@ -49,14 +50,14 @@ func main() {
 		apiGroup.GET("/getBlackStatus", middle.JWTAuthMiddleware(), controller.GetBlackStatus)
 		apiGroup.GET("/getBlackList", middle.JWTAuthMiddleware(), controller.GetBlackList)
 
-		apiGroup.POST("/searchUser/:username",middle.JWTAuthMiddleware(),controller.SearchUser)
+		apiGroup.POST("/searchUser/:username", middle.JWTAuthMiddleware(), controller.SearchUser)
 
 		apiGroup.GET("/getChatList", middle.JWTAuthMiddleware(), controller.GetMineChatList)
-		apiGroup.POST("/uploadChatImg",middle.JWTAuthMiddleware(),controller.UploadChatImage)
-		apiGroup.POST("/makeChat",middle.JWTAuthMiddleware(),controller.MakeChat)
+		apiGroup.POST("/uploadChatImg", middle.JWTAuthMiddleware(), controller.UploadChatImage)
+		apiGroup.POST("/makeChat", middle.JWTAuthMiddleware(), controller.MakeChat)
 
 		//apiGroup.GET("/getChatList",middle.JWTAuthMiddleware(),controller.GetChat)
-		apiGroup.POST("/modifyAvatar",middle.JWTAuthMiddleware(),controller.ModifyAvatar)
+		apiGroup.POST("/modifyAvatar", middle.JWTAuthMiddleware(), controller.ModifyAvatar)
 		apiGroup.GET("/showImg", controller.ShowImage)
 		apiGroup.GET("/AJAX/:id", testAJAX)
 		//apiGroup.POST("/uploadFile", controller.UploadImage)
