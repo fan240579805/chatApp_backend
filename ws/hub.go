@@ -5,7 +5,9 @@ import (
 	"chatApp_backend/model"
 	_type "chatApp_backend/type"
 	"encoding/json"
+	"github.com/gin-gonic/gin"
 	"log"
+	"net/http"
 )
 
 type ClientManger struct {
@@ -82,7 +84,12 @@ func (Manager *ClientManger) Start() {
 					// 这个if是为了过滤的这种情况
 					if MessageChatStruct.Message.Recipient != MessageChatStruct.Message.Sender {
 						// 登录了，也要chat unread++ ，因为前端需要全局小红点来提示已登录用户
-						common.ModifyUnRead(MessageChatStruct.ChatID, true)
+						if Manager.Clients[MessageChatStruct.Message.Recipient].hasChatRoom {
+							// 如果接收消息的recipient正在聊天中，则不进行unread + 1，而是归零
+							common.ModifyUnRead(MessageChatStruct.ChatID, false)
+						} else {
+							common.ModifyUnRead(MessageChatStruct.ChatID, true)
+						}
 						// push给对方一个chat  ***!前端结合recentMsg是否是自己发的来确定是否展示小红点，以及是否清除小红点
 						bePushedChat := getPushChatItem(MessageChatStruct.ChatID, MessageChatStruct.Message.Recipient, MessageChatStruct.Message.Sender)
 						chatItemByte, _ := json.Marshal(&bePushedChat)
@@ -164,3 +171,26 @@ func UserExit(userid string) {
 		}
 	}
 }
+
+// JoinChatRoom 用户加入chatroom中
+func JoinChatRoom(c *gin.Context) {
+	uid, _ := c.Get("userID")
+	Manager.Clients[uid.(string)].hasChatRoom = true
+	c.JSON(http.StatusOK, gin.H{
+		"code": 200,
+		"msg":  "",
+		"data": "",
+	})
+}
+
+// ExitChatRoom 用户加入chatroom中
+func ExitChatRoom(c *gin.Context) {
+	uid, _ := c.Get("userID")
+	Manager.Clients[uid.(string)].hasChatRoom = false
+	c.JSON(http.StatusOK, gin.H{
+		"code": 200,
+		"msg":  "",
+		"data": "",
+	})
+}
+

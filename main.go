@@ -50,13 +50,15 @@ func main() {
 		apiGroup.GET("/getBlackStatus", middle.JWTAuthMiddleware(), controller.GetBlackStatus)
 		apiGroup.GET("/getBlackList", middle.JWTAuthMiddleware(), controller.GetBlackList)
 		apiGroup.POST("/canIChat", middle.JWTAuthMiddleware(), controller.CanIChat)
-		apiGroup.POST("/resetUnread",middle.JWTAuthMiddleware(),controller.ResetUnread)
+		apiGroup.POST("/resetUnread", middle.JWTAuthMiddleware(), controller.ResetUnread)
 
 		apiGroup.POST("/searchUser/:username", middle.JWTAuthMiddleware(), controller.SearchUser)
 
 		apiGroup.GET("/getChatList", middle.JWTAuthMiddleware(), controller.GetMineChatList)
 		apiGroup.POST("/uploadChatImg", middle.JWTAuthMiddleware(), controller.UploadChatImage)
 		apiGroup.POST("/makeChat", middle.JWTAuthMiddleware(), controller.MakeChat)
+		apiGroup.POST("/toggleInTheChat", middle.JWTAuthMiddleware(), ws.JoinChatRoom)
+		apiGroup.POST("/exitChat", middle.JWTAuthMiddleware(), ws.ExitChatRoom)
 
 		//apiGroup.GET("/getChatList",middle.JWTAuthMiddleware(),controller.GetChat)
 		apiGroup.POST("/modifyAvatar", middle.JWTAuthMiddleware(), controller.ModifyAvatar)
