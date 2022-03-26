@@ -293,7 +293,6 @@ func GetBlackStatus(c *gin.Context) {
 	ToID := c.Query("to")
 
 	rightRelation, _ := model.GetRightRelationRecord(FromID, ToID)
-	log.Println("getblack", FromID)
 	if FromID == rightRelation.From {
 		if rightRelation.Status == 4 {
 			// 当前用户确实拉黑了对方
@@ -334,6 +333,60 @@ func GetBlackStatus(c *gin.Context) {
 			})
 		}
 	}
+}
+
+// CanIChat 查询聊天对方用户的状态是否可以聊天
+func CanIChat(c *gin.Context) {
+	FromID := c.Query("from")
+	ToID := c.Query("to")
+
+	rightRelation, _ := model.GetRightRelationRecord(FromID, ToID)
+
+	if FromID == rightRelation.From {
+		if rightRelation.Status == 4 {
+			// 当前用户确实拉黑了对方
+			c.JSON(http.StatusOK, gin.H{
+				"code": 200,
+				"msg":  "已拉黑对方，无法发送",
+				"data": false,
+			})
+		} else if rightRelation.Status == 2 {
+			c.JSON(http.StatusOK, gin.H{
+				"code": 200,
+				"msg":  "已删除对方，无法发送",
+				"data": false,
+			})
+		} else {
+			c.JSON(http.StatusOK, gin.H{
+				"code": 200,
+				"msg":  "",
+				"data": true,
+			})
+		}
+	} else {
+		// 此时查询是否拉黑对方的user在relation中是接受方，所以查询是否为5
+		if rightRelation.Status == 5 {
+			// 当前用户确实拉黑了对方
+			c.JSON(http.StatusOK, gin.H{
+				"code": 200,
+				"msg":  "已被拉黑，无法发送",
+				"data": false,
+			})
+		} else if rightRelation.Status == 3 {
+			c.JSON(http.StatusOK, gin.H{
+				"code": 200,
+				"msg":  "已被删除，无法发送",
+				"data": false,
+			})
+		} else {
+			c.JSON(http.StatusOK, gin.H{
+				"code": 200,
+				"msg":  "",
+				"data": true,
+			})
+		}
+	}
+
 }
 
 // GetBlackList 暂时是获取blacklist长度

@@ -138,6 +138,7 @@ func getPushChatItem(chatID string, bePushedUser string, chatToUser string) *_ty
 	userProfile, _ := model.SelectUser(chatToUser)
 	var chatItem = &_type.ChatItem{
 		ChatID:           chatRoom.ChatID,
+		UnRead:           chatRoom.Unread,
 		RecentMsg:        chatRoom.RecentMsg,
 		ChatToNickName:   userProfile.NickName,
 		ChatToUserID:     userProfile.UserID,
@@ -152,11 +153,10 @@ func getPushChatItem(chatID string, bePushedUser string, chatToUser string) *_ty
 	return bePushedChat
 }
 
-
 // UserExit 用户登出
-func UserExit(userid string)  {
+func UserExit(userid string) {
 	for uid, conn := range Manager.Clients {
-		if uid == userid{
+		if uid == userid {
 			log.Printf("用户离开:%s", uid)
 			close(conn.Send)
 			delete(Manager.Clients, conn.ID)

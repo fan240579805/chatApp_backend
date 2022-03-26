@@ -49,6 +49,8 @@ func main() {
 		apiGroup.POST("/cancelBlack", middle.JWTAuthMiddleware(), controller.CancelBlack)
 		apiGroup.GET("/getBlackStatus", middle.JWTAuthMiddleware(), controller.GetBlackStatus)
 		apiGroup.GET("/getBlackList", middle.JWTAuthMiddleware(), controller.GetBlackList)
+		apiGroup.POST("/canIChat", middle.JWTAuthMiddleware(), controller.CanIChat)
+		apiGroup.POST("/resetUnread",middle.JWTAuthMiddleware(),controller.ResetUnread)
 
 		apiGroup.POST("/searchUser/:username", middle.JWTAuthMiddleware(), controller.SearchUser)
 

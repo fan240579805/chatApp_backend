@@ -15,6 +15,7 @@ type BePushedMsg struct {
 // ChatItem 聊天框item
 type ChatItem struct {
 	ChatID           string
+	UnRead           int
 	RecentMsg        model.Message
 	ChatToNickName   string
 	ChatToUserID     string

@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"chatApp_backend/common"
 	"chatApp_backend/model"
 	_type "chatApp_backend/type"
 	"chatApp_backend/ws"
@@ -38,6 +39,7 @@ func MakeChat(c *gin.Context) {
 		chatItem := &_type.ChatItem{
 			ChatID:           existChat.ChatID,
 			RecentMsg:        existChat.RecentMsg,
+			UnRead:           existChat.Unread,
 			ChatToNickName:   userProfile.NickName,
 			ChatToUserID:     userProfile.UserID,
 			ChatToUserAvatar: userProfile.Avatar,
@@ -60,6 +62,7 @@ func MakeChat(c *gin.Context) {
 			userProfile, _ := model.SelectUser(chat.Other)
 			chatItem := &_type.ChatItem{
 				ChatID:           chat.ChatID,
+				UnRead:           existChat.Unread,
 				RecentMsg:        chat.RecentMsg,
 				ChatToNickName:   userProfile.NickName,
 				ChatToUserID:     userProfile.UserID,
@@ -72,6 +75,43 @@ func MakeChat(c *gin.Context) {
 				"data": chatItem,
 			})
 		}
+	}
+}
+
+// ResetUnread 将某一chat未对消息归零
+func ResetUnread(c *gin.Context) {
+	curUserid, _ := c.Get("userID")
+	type chatIDStruct struct {
+		ChatID string
+	}
+	var cStruct chatIDStruct
+	c.ShouldBindJSON(&cStruct)
+	common.ModifyUnRead(cStruct.ChatID, false)
+	newChat, selectErr := model.SelectChatRecord(cStruct.ChatID)
+	if selectErr != nil {
+		log.Println("更新unread出错")
+	} else {
+		var toUserID string
+		if curUserid.(string) == newChat.Other {
+			toUserID = newChat.Owner
+		} else {
+			toUserID = newChat.Other
+		}
+		userProfile, _ := model.SelectUser(toUserID)
+		chatItem := &_type.ChatItem{
+			ChatID:           newChat.ChatID,
+			UnRead:           newChat.Unread,
+			RecentMsg:        newChat.RecentMsg,
+			ChatToNickName:   userProfile.NickName,
+			ChatToUserID:     userProfile.UserID,
+			ChatToUserAvatar: userProfile.Avatar,
+			RecentTime:       newChat.UpdatedAt.UnixMilli(),
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"code": 200,
+			"msg":  "",
+			"data": chatItem,
+		})
 	}
 }
 
@@ -112,6 +152,7 @@ func FormatChatList(userid string, c *gin.Context) []*_type.ChatItem {
 				userProfile, _ := model.SelectUser(chatRoom.Other)
 				chatList[i] = &_type.ChatItem{
 					ChatID:           chatRoom.ChatID,
+					UnRead:           chatRoom.Unread,
 					RecentMsg:        chatRoom.RecentMsg,
 					ChatToNickName:   userProfile.NickName,
 					ChatToUserID:     userProfile.UserID,
@@ -124,6 +165,7 @@ func FormatChatList(userid string, c *gin.Context) []*_type.ChatItem {
 				userProfile, _ := model.SelectUser(chatRoom.Owner)
 				chatList[i] = &_type.ChatItem{
 					ChatID:           chatRoom.ChatID,
+					UnRead:           chatRoom.Unread,
 					RecentMsg:        chatRoom.RecentMsg,
 					ChatToNickName:   userProfile.NickName,
 					ChatToUserID:     userProfile.UserID,

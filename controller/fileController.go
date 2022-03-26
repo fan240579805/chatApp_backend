@@ -2,6 +2,7 @@ package controller
 
 import (
 	"chatApp_backend/_const"
+	"chatApp_backend/common"
 	"chatApp_backend/model"
 	"chatApp_backend/utils"
 	"fmt"
@@ -83,6 +84,8 @@ func UploadChatImage(c *gin.Context) {
 			"msg":  "发送成功",
 			"data": chatImgUrl,
 		})
+		// 更新最新消息
+		common.ModifyRecentMsg(chatID, message)
 		// 图片推送给自己
 		PushChatMsg2User(chatID, sender, message)
 		// 推送给别人
