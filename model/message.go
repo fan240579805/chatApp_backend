@@ -47,26 +47,24 @@ func SelectMessageRecord(msgID string) (Message, error) {
 	return message, nil
 }
 
-func ModifyMsgState(msgFrom string, msgTo string) error {
-
-	// 1. 先查询出 该条要变为 已读的消息
-	//var m1 []Message
-	//dao.DB.Debug().Where("sender=? AND recipient =? ",msgFrom,msgTo).Find(&m1)
-	//fmt.Println("m1",m1)
-
-	err := dao.DB.Debug().Model(&Message{}).Where("sender=? AND recipient =? ", msgFrom, msgTo).Update("unread", true).Error
-	if err != nil {
-		return err
+func SelectMessages(mine string, other string) ([]Message, error) {
+	// 发起该段好友relation的数组，from == userid
+	var mineMessages []Message
+	// 接受这段好友relation的数组  to == userid
+	var otherMessages []Message
+	// 2：此时请求friendList的用户在relation表中是from, 不需要from主动删除即 status = 2 的好友
+	selectMineErr := dao.DB.Debug().Where("sender=? AND recipient=?", mine, other).Find(&mineMessages).Error
+	if selectMineErr != nil {
+		return mineMessages, selectMineErr
 	}
-	return nil
-}
-
-func GetChatContent() ([]Message, error) {
-	var m1 []Message
-	err := dao.DB.Find(&m1).Error
-	if err != nil {
-		return m1, err
+	// 3：此时请求friendList的用户在relation表中是to, 不需要to主动删除即 status = 3 的好友
+	selectOtherErr := dao.DB.Debug().Where("sender=? AND recipient=?", other, mine).Find(&otherMessages).Error
+	if selectOtherErr != nil {
+		return otherMessages, selectOtherErr
 	}
-
-	return m1, nil
+	if len(mineMessages) > 0 || len(otherMessages) > 0 {
+		return append(mineMessages, otherMessages...), nil
+	} else {
+		return []Message{}, nil
+	}
 }

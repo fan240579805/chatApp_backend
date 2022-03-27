@@ -54,6 +54,7 @@ func PostRegister(c *gin.Context) {
 			"data": gin.H{
 				"username": u1.Username,
 				"nickname": u1.NickName,
+				"avatar":   u1.Avatar,
 				"userID":   u1.UserID,
 				"token":    token,
 			},
@@ -91,13 +92,14 @@ func PostLogin(c *gin.Context) {
 				"username": u1.Username,
 				"userID":   u1.UserID,
 				"token":    token,
+				"avatar":   u1.Avatar,
 			},
 		})
 
 	}
 }
 
-func LogOut(c*gin.Context){
+func LogOut(c *gin.Context) {
 	id, _ := c.Get("userID")
 	ws.UserExit(id.(string))
 	c.JSON(http.StatusOK, gin.H{

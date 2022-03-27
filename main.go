@@ -55,6 +55,7 @@ func main() {
 		apiGroup.POST("/searchUser/:username", middle.JWTAuthMiddleware(), controller.SearchUser)
 
 		apiGroup.GET("/getChatList", middle.JWTAuthMiddleware(), controller.GetMineChatList)
+		apiGroup.POST("/getMsgList", middle.JWTAuthMiddleware(), controller.GetMsgList)
 		apiGroup.POST("/uploadChatImg", middle.JWTAuthMiddleware(), controller.UploadChatImage)
 		apiGroup.POST("/makeChat", middle.JWTAuthMiddleware(), controller.MakeChat)
 		apiGroup.POST("/toggleInTheChat", middle.JWTAuthMiddleware(), ws.JoinChatRoom)

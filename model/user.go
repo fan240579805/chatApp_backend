@@ -5,8 +5,6 @@ import (
 	"chatApp_backend/dao"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"github.com/jinzhu/gorm"
 	"time"
 )
 
@@ -37,27 +35,6 @@ type ChatList []string
 type ModifyAction struct {
 	InfoAttr  string
 	Playloads string
-}
-
-func MakeChatList(db *gorm.DB) (string, error) {
-	var chats = &ChatList{"123", "123asdasds"}
-	bs, err := json.Marshal(chats)
-	user := &User{
-		ID:       0,
-		UserID:   "12312313asda",
-		Username: "asdasd",
-		Password: "123",
-		Avatar:   "asd",
-		NickName: "aaa",
-		ChatList: string(bs),
-	}
-	_ = db.Debug().Create(user).Error
-	fmt.Println("create user success")
-	if err != nil {
-		return "出错啦", err
-	} else {
-		return string(bs), nil
-	}
 }
 
 func checkUser(user *User) error {
