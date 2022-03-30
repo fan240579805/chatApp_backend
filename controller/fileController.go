@@ -20,6 +20,11 @@ func ShowImage(c *gin.Context) {
 	c.File(imageName)
 }
 
+func ShowAudio(c *gin.Context)  {
+	audioName := c.Query("audioPath")
+	c.File(audioName)
+}
+
 // ModifyAvatar 更新并保存头像路径
 func ModifyAvatar(c *gin.Context) {
 	uid := c.PostForm("userid")
@@ -54,14 +59,7 @@ func UploadChatImage(c *gin.Context) {
 
 	chatImgPath, _ := SaveImageToDisk(c, _const.CHAT_IMG_PATH)
 	chatImgUrl := _const.BASE_URL + "/api/showImg?imageName=" + chatImgPath
-	//insertErr := model.InsertFile(chatImgUrl, userid.(string), "img", "图片")
-	//if insertErr != nil {
-	//	log.Println("file存入失败")
-	//	c.JSON(http.StatusOK, gin.H{
-	//		"code": 2004,
-	//		"msg":  "file存入失败",
-	//	})
-	//}
+
 	message := model.Message{
 		MsgID:     "msgID_" + utils.UniqueId(),
 		Sender:    userid.(string),
@@ -92,6 +90,47 @@ func UploadChatImage(c *gin.Context) {
 		PushChatMsg2User(chatID, recipient, message)
 	}
 
+}
+
+// UploadAudio 上传聊天语音接口，并转发给聊天用户
+func UploadAudio(c *gin.Context) {
+	userid, _ := c.Get("userID")
+	chatID := c.PostForm("chatID")
+	recipient := c.PostForm("recipient")
+	sender := c.PostForm("sender")
+
+	chatAudioPath, _ := SaveImageToDisk(c, _const.CHAT_AUDIO_PATH)
+	chatAudioUrl := _const.BASE_URL + "/api/showAudio?audioPath=" + chatAudioPath
+
+	message := model.Message{
+		MsgID:     "msgID_" + utils.UniqueId(),
+		Sender:    userid.(string),
+		Recipient: recipient,
+		Content:   chatAudioUrl,
+		SendTime:  time.Now().UnixMilli(),
+		Type:      "audio",
+	}
+	saveMsgErr := model.AddMessageRecord(message)
+	if saveMsgErr != nil {
+		log.Println("聊天图片存入数据库失败")
+		c.JSON(http.StatusOK, gin.H{
+			"code": 2004,
+			"msg":  "聊天图片存入数据库失败",
+		})
+	}
+	if saveMsgErr == nil {
+		c.JSON(200, gin.H{
+			"code": 200,
+			"msg":  "发送成功",
+			"data": chatAudioUrl,
+		})
+		// 更新最新消息
+		common.ModifyRecentMsg(chatID, message)
+		// 图片推送给自己
+		PushChatMsg2User(chatID, sender, message)
+		// 推送给别人
+		PushChatMsg2User(chatID, recipient, message)
+	}
 }
 
 // SaveImageToDisk 图片存储到服务器磁盘func

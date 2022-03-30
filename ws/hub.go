@@ -84,7 +84,7 @@ func (Manager *ClientManger) Start() {
 					// 这个if是为了过滤的这种情况
 					if MessageChatStruct.Message.Recipient != MessageChatStruct.Message.Sender {
 						// 登录了，也要chat unread++ ，因为前端需要全局小红点来提示已登录用户
-						if Manager.Clients[MessageChatStruct.Message.Recipient].hasChatRoom {
+						if Manager.Clients[MessageChatStruct.Message.Recipient].CurChatID == MessageChatStruct.ChatID {
 							// 如果接收消息的recipient正在聊天中，则不进行unread + 1，而是归零
 							common.ModifyUnRead(MessageChatStruct.ChatID, false)
 						} else {
@@ -172,10 +172,17 @@ func UserExit(userid string) {
 	}
 }
 
+
+type ChatRoomType struct {
+	ChatID string
+}
+
 // JoinChatRoom 用户加入chatroom中
 func JoinChatRoom(c *gin.Context) {
 	uid, _ := c.Get("userID")
-	Manager.Clients[uid.(string)].hasChatRoom = true
+	var chatRoomParams ChatRoomType
+	c.ShouldBindJSON(&chatRoomParams)
+	Manager.Clients[uid.(string)].CurChatID = chatRoomParams.ChatID
 	c.JSON(http.StatusOK, gin.H{
 		"code": 200,
 		"msg":  "",
@@ -186,7 +193,9 @@ func JoinChatRoom(c *gin.Context) {
 // ExitChatRoom 用户加入chatroom中
 func ExitChatRoom(c *gin.Context) {
 	uid, _ := c.Get("userID")
-	Manager.Clients[uid.(string)].hasChatRoom = false
+	var chatRoomParams ChatRoomType
+	c.ShouldBindJSON(&chatRoomParams)
+	Manager.Clients[uid.(string)].CurChatID = chatRoomParams.ChatID
 	c.JSON(http.StatusOK, gin.H{
 		"code": 200,
 		"msg":  "",

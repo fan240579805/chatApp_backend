@@ -20,7 +20,7 @@ type Client struct {
 	ID     string
 	Socket *websocket.Conn
 	Send   chan []byte
-	hasChatRoom bool
+	CurChatID string
 	mutex sync.Mutex
 }
 
@@ -45,7 +45,7 @@ func WsHandler(c *gin.Context) {
 	client := &Client{
 		ID:     uid,
 		Socket: ws,
-		hasChatRoom: false,// 用户是否正在聊天中
+		CurChatID: "",// 用户是否正在聊天中
 		Send:   make(chan []byte, 256),
 		//UserInfo: u1,
 	}

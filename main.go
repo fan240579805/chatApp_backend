@@ -57,6 +57,8 @@ func main() {
 		apiGroup.GET("/getChatList", middle.JWTAuthMiddleware(), controller.GetMineChatList)
 		apiGroup.POST("/getMsgList", middle.JWTAuthMiddleware(), controller.GetMsgList)
 		apiGroup.POST("/uploadChatImg", middle.JWTAuthMiddleware(), controller.UploadChatImage)
+		apiGroup.POST("/uploadAudio", middle.JWTAuthMiddleware(), controller.UploadAudio)
+
 		apiGroup.POST("/makeChat", middle.JWTAuthMiddleware(), controller.MakeChat)
 		apiGroup.POST("/toggleInTheChat", middle.JWTAuthMiddleware(), ws.JoinChatRoom)
 		apiGroup.POST("/exitChat", middle.JWTAuthMiddleware(), ws.ExitChatRoom)
@@ -64,6 +66,8 @@ func main() {
 		//apiGroup.GET("/getChatList",middle.JWTAuthMiddleware(),controller.GetChat)
 		apiGroup.POST("/modifyAvatar", middle.JWTAuthMiddleware(), controller.ModifyAvatar)
 		apiGroup.GET("/showImg", controller.ShowImage)
+		apiGroup.GET("/showAudio", controller.ShowAudio)
+
 		apiGroup.GET("/AJAX/:id", testAJAX)
 		//apiGroup.POST("/uploadFile", controller.UploadImage)
 	}
