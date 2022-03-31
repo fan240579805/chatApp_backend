@@ -36,6 +36,8 @@ func main() {
 		apiGroup.POST("/login", controller.PostLogin)
 		apiGroup.POST("/logout", middle.JWTAuthMiddleware(), controller.LogOut)
 		apiGroup.POST("/AuthToken", middle.JWTAuthMiddleware(), controller.GetUserInfo)
+		apiGroup.POST("/resetPassword", controller.ResetPassword)
+
 		apiGroup.GET("/userInfo", middle.JWTAuthMiddleware(), controller.GetUserInfo)
 		apiGroup.POST("/updateUserInfo", middle.JWTAuthMiddleware(), controller.UpdateUserInfo)
 		apiGroup.POST("/addFriendReq", middle.JWTAuthMiddleware(), controller.AddFriendReq)
@@ -67,6 +69,10 @@ func main() {
 		apiGroup.POST("/modifyAvatar", middle.JWTAuthMiddleware(), controller.ModifyAvatar)
 		apiGroup.GET("/showImg", controller.ShowImage)
 		apiGroup.GET("/showAudio", controller.ShowAudio)
+
+		apiGroup.POST("/sendEmailVcode", controller.SendVcode)
+		//apiGroup.POST("/checkVcode", middle.JWTAuthMiddleware(), utils.CheckVcode)
+
 
 		apiGroup.GET("/AJAX/:id", testAJAX)
 		//apiGroup.POST("/uploadFile", controller.UploadImage)

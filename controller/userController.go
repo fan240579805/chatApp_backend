@@ -9,7 +9,12 @@ import (
 	"chatApp_backend/ws"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"log"
+	"math/rand"
 	"net/http"
+	"time"
+
+	"gopkg.in/gomail.v2"
 )
 
 func PostRegister(c *gin.Context) {
@@ -96,6 +101,57 @@ func PostLogin(c *gin.Context) {
 			},
 		})
 
+	}
+}
+
+// ResetPassword 忘记密码
+func ResetPassword(c *gin.Context) {
+	type ResetPwdParams struct {
+		UserName string
+		EmailCode string
+		PassWord string
+	}
+	var params ResetPwdParams
+	c.ShouldBindJSON(&params)
+	username := params.UserName
+	newPassword := params.PassWord
+	emailVcode := params.EmailCode
+	var user model.User
+
+	selectErr := dao.DB.Where("username=?", username).Find(&user).Error
+	if selectErr != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"code": 200,
+			"msg":  "没有该用户",
+			"data": false,
+		})
+		return
+	}
+
+	if CheckVcode(user.UserID, emailVcode) {
+		var modifyAction model.ModifyAction
+		modifyAction.InfoAttr = "password"
+		modifyAction.Playloads = newPassword
+		_, modifyErr := model.ModifyChatUserInfo(user.UserID, &modifyAction)
+		if modifyErr != nil {
+			c.JSON(http.StatusOK, gin.H{
+				"code": 200,
+				"msg":  "更新失败，请重试",
+				"data": false,
+			})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"code": 200,
+			"msg":  "更新成功",
+			"data": true,
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"code": 200,
+			"msg":  "验证码错误",
+			"data": false,
+		})
 	}
 }
 
@@ -238,20 +294,147 @@ func SearchUser(c *gin.Context) {
 	}
 }
 
-// GetChatList 根据userid获取对应的聊天会话列表
-func GetChatList(c *gin.Context) {
-	idS, _ := c.Params.Get("userid")
-	chatList, err := model.GetUserChatList(idS)
-	if err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"code": 404,
-			"msg":  "请求聊天列表失败",
+
+// MailboxConf 邮箱配置
+type MailboxConf struct {
+	// 邮件标题
+	Title string
+	// 邮件内容
+	Body string
+	// 收件人列表
+	RecipientList []string
+	// 发件人账号
+	Sender string
+	// 发件人密码，QQ邮箱这里配置授权码
+	SPassword string
+	// SMTP 服务器地址， QQ邮箱是smtp.qq.com
+	SMTPAddr string
+	// SMTP端口 QQ邮箱是25
+	SMTPPort int
+}
+
+type MailType struct {
+	Vcode        string
+	LastSendTime int64
+}
+
+var ClientMailMap = make(map[string]*MailType)
+
+var maxTime = 60
+
+type MailParams struct {
+	UserName string
+	Email string
+}
+
+func SendVcode(c *gin.Context) {
+	var emailParams MailParams
+	c.ShouldBindJSON(&emailParams)
+	var user model.User
+	selectErr := dao.DB.Debug().Where("username=?", emailParams.UserName).Find(&user).Error
+	if selectErr != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"code": 200,
+			"msg":  "没有该用户",
+			"data": false,
 		})
+		return
 	}
+	var userid = user.UserID
+
+	if ClientMailMap[userid] == nil {
+		ClientMailMap[userid] = &MailType{
+			Vcode:        "",
+			LastSendTime: 0,
+		}
+	}
+
+	var curTime = time.Now().Unix()
+	if curTime-ClientMailMap[userid].LastSendTime < int64(maxTime) {
+		// 60s 只发送一次验证码
+		return
+	}
+	var mailConf MailboxConf
+	mailConf.Title = "验证"
+	// 这里就是我们发送的邮箱内容，但是也可以通过下面的html代码作为邮件内容
+	// mailConf.Body = "坚持才是胜利，奥里给"
+
+	//这里支持群发，只需填写多个人的邮箱即可，我这里发送人使用的是QQ邮箱，所以接收人也必须都要是
+	//QQ邮箱
+	mailConf.RecipientList = []string{emailParams.Email}
+	mailConf.Sender = `2953336033@qq.com`
+
+	//这里QQ邮箱要填写授权码，网易邮箱则直接填写自己的邮箱密码，授权码获得方法在下面
+	mailConf.SPassword = "qscozlfhzrtidhdc"
+
+	//下面是官方邮箱提供的SMTP服务地址和端口
+	// QQ邮箱：SMTP服务器地址：smtp.qq.com（端口：587）
+	// 雅虎邮箱: SMTP服务器地址：smtp.yahoo.com（端口：587）
+	// 163邮箱：SMTP服务器地址：smtp.163.com（端口：25）
+	// 126邮箱: SMTP服务器地址：smtp.126.com（端口：25）
+	// 新浪邮箱: SMTP服务器地址：smtp.sina.com（端口：25）
+
+	mailConf.SMTPAddr = `smtp.qq.com`
+	mailConf.SMTPPort = 25
+
+	//产生六位数验证码
+	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+	vcode := fmt.Sprintf("%06v", rnd.Int31n(1000000))
+	ClientMailMap[userid].Vcode = vcode
+	ClientMailMap[userid].LastSendTime = time.Now().Unix()
+
+	//发送的内容
+	html := fmt.Sprintf(`<div>
+        <div>
+            尊敬的用户，您好！
+        </div>
+        <div style="padding: 8px 40px 8px 50px;">
+            <p>你本次的验证码为%s,为了保证账号安全，验证码有效期为5分钟。请确认为本人操作，切勿向他人泄露，感谢您的理解与使用。</p>
+        </div>
+        <div>
+            <p>此邮箱为系统邮箱，请勿回复。</p>
+        </div>    
+    </div>`, vcode)
+
+	m := gomail.NewMessage()
+
+	// 第三个参数是我们发送者的名称，但是如果对方有发送者的好友，优先显示对方好友备注名
+	m.SetHeader(`From`, mailConf.Sender, "chatApp官方")
+	m.SetHeader(`To`, mailConf.RecipientList...)
+	m.SetHeader(`Subject`, mailConf.Title)
+	m.SetBody(`text/html`, html)
+	// m.Attach("./Dockerfile") //添加附件
+	err := gomail.NewDialer(mailConf.SMTPAddr, mailConf.SMTPPort, mailConf.Sender, mailConf.SPassword).DialAndSend(m)
+	if err != nil {
+		log.Fatalf("Send Email Fail, %s", err.Error())
+		return
+	}
+	log.Printf("Send Email Success")
 	c.JSON(http.StatusOK, gin.H{
 		"code": 200,
-		"data": gin.H{
-			"chatList": chatList,
-		},
+		"msg":  "验证码发送成功",
+		"data": "",
 	})
 }
+
+type MailCheckParams struct {
+	InputCode string
+}
+
+func CheckVcode(userid string, InputCode string) bool {
+	//uid, _ := c.Get("userID")
+	//var userid = uid.(string)
+
+	//var mailCheckStruct MailCheckParams
+	//c.ShouldBindJSON(&mailCheckStruct)
+
+	if ClientMailMap[userid].Vcode == InputCode {
+		return true
+	} else {
+		return false
+	}
+
+}
+
+
+

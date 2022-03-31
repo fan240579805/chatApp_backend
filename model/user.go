@@ -5,6 +5,7 @@ import (
 	"chatApp_backend/dao"
 	"encoding/json"
 	"errors"
+	"log"
 	"time"
 )
 
@@ -87,6 +88,7 @@ func SelectUser(id string) (*UserInfo, error) {
 // ModifyChatUserInfo 根据 id 查询出用户并更新相应信息; modifyAction-要更新的数据库字段命及参数
 // 更新chatList字段是前端回传json格式的数组就行
 func ModifyChatUserInfo(id string, action *ModifyAction) (User, error) {
+	log.Println("asdasdasad",id,action)
 	var user User
 	err := dao.DB.Where("userid=?", id).First(&user).Error
 	if err != nil {
@@ -96,6 +98,7 @@ func ModifyChatUserInfo(id string, action *ModifyAction) (User, error) {
 		var avatarFileName = action.Playloads
 		action.Playloads = _const.BASE_URL + "/api/showImg?imageName=" + _const.AVATAR_PATH + avatarFileName
 	}
+	log.Println("asdasdasad",id,action)
 	err = dao.DB.Model(&user).Update(action.InfoAttr, action.Playloads).Error
 	if err != nil {
 		return user, err
