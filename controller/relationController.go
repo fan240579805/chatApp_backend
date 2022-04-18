@@ -166,6 +166,7 @@ func DeleteFriendReq(c *gin.Context) {
 
 // BothDelFriend 双方互删了 直接删除关系记录
 func BothDelFriend(c *gin.Context) {
+	curUser,_ := c.Get("userID")
 	var unknownRecord model.Relation
 	c.ShouldBindJSON(&unknownRecord)
 	rightRelation, _ := model.GetRightRelationRecord(unknownRecord.From, unknownRecord.To)
@@ -179,7 +180,7 @@ func BothDelFriend(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"code": 200,
 			"msg":  "移除成功",
-			"data": FormatFriendList(rightRelation.To, c),
+			"data": FormatFriendList(curUser.(string), c),
 		})
 	}
 }

@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// Message is return msg
+// Message ORM映射结构体
 type Message struct {
 	MID       int       `gorm:"column:mid;primary_key;AUTO_INCREMENT"`
 	MsgID     string    `gorm:"column:msgid"`
@@ -37,6 +37,7 @@ func AddMessageRecord(msg Message) error {
 	}
 	return nil
 }
+
 
 func SelectMessageRecord(msgID string) (Message, error) {
 	var message Message

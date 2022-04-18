@@ -21,12 +21,8 @@ func MakeChat(c *gin.Context) {
 	var chatParams chatType
 	c.ShouldBindJSON(&chatParams)
 	existChat, checkErr := model.CheckChatExist(chatParams.Sender, chatParams.Recipient)
-	if checkErr != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"code": 444,
-			"msg":  "发起聊天失败",
-		})
-	} else {
+
+	if checkErr == nil {
 		var userProfile *model.UserInfo
 		// 已经存在一条聊天框，需要对发起makeChat请求的用户进行判断，看他是发起聊天的用户还是被发起聊天的用户
 		if existChat.Owner == chatParams.Sender {
@@ -60,6 +56,7 @@ func MakeChat(c *gin.Context) {
 			})
 		} else {
 			userProfile, _ := model.SelectUser(chat.Other)
+
 			chatItem := &_type.ChatItem{
 				ChatID:           chat.ChatID,
 				UnRead:           existChat.Unread,

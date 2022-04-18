@@ -6,7 +6,6 @@ import (
 	"chatApp_backend/middle"
 	"chatApp_backend/model"
 	"chatApp_backend/ws"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
@@ -71,24 +70,8 @@ func main() {
 		apiGroup.GET("/showAudio", controller.ShowAudio)
 
 		apiGroup.POST("/sendEmailVcode", controller.SendVcode)
-		//apiGroup.POST("/checkVcode", middle.JWTAuthMiddleware(), utils.CheckVcode)
 
-
-		apiGroup.GET("/AJAX/:id", testAJAX)
-		//apiGroup.POST("/uploadFile", controller.UploadImage)
 	}
 
 	r.Run(":9998")
-}
-func testAJAX(context *gin.Context) {
-	id, _ := context.Params.Get("id")
-	fmt.Println(id)
-	context.JSON(400, gin.H{
-		"msg": 123,
-	})
-}
-
-type file struct {
-	userid string
-	path   string
 }

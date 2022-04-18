@@ -14,9 +14,9 @@ type ClientManger struct {
 	Clients    map[string]*Client
 	Register   chan *Client
 	UnRegister chan *Client
-	Broadcast  chan []byte
-	ChatChan   chan []byte
-	FriendChan chan []byte
+	Broadcast  chan []byte // 传递消息message的管道
+	ChatChan   chan []byte // 推送chat聊天框给对方的管道
+	FriendChan chan []byte // 推送firendReq给对方的管道
 }
 
 var Manager = ClientManger{
@@ -28,6 +28,7 @@ var Manager = ClientManger{
 	FriendChan: make(chan []byte), // 推送firendReq给对方的管道
 }
 
+// Start 开启并发协程，不停地监听数据管道是否有数据，有则转发
 func (Manager *ClientManger) Start() {
 	for {
 		select {
@@ -47,7 +48,7 @@ func (Manager *ClientManger) Start() {
 				close(client.Send)
 				delete(Manager.Clients, client.ID)
 			}
-
+		// 消息管道接收到消息，进行转发给指定userid
 		case WsMessageObj := <-Manager.Broadcast:
 			MessageChatStruct := _type.WsMessageObj{}
 			json.Unmarshal(WsMessageObj, &MessageChatStruct)
@@ -102,7 +103,7 @@ func (Manager *ClientManger) Start() {
 					delete(Manager.Clients, conn.ID)
 				}
 			}
-
+		// 好友数据管道接收到消息，进行推送给userid
 		case newFriendDetail := <-Manager.FriendChan:
 			newPushObject := _type.BePushedFriend{}
 			json.Unmarshal(newFriendDetail, &newPushObject)
