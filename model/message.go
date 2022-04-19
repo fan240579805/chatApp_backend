@@ -38,7 +38,6 @@ func AddMessageRecord(msg Message) error {
 	return nil
 }
 
-
 func SelectMessageRecord(msgID string) (Message, error) {
 	var message Message
 	err := dao.DB.Where("msgid=?", msgID).First(&message).Error
@@ -68,4 +67,23 @@ func SelectMessages(mine string, other string) ([]Message, error) {
 	} else {
 		return []Message{}, nil
 	}
+}
+
+// SelectLastMsg 筛选出最后一条记录
+func SelectLastMsg(mine string, other string) (Message, error) {
+	var LastRecord Message
+	err := dao.DB.Where("sender=? AND recipient=?", mine, other).Last(&LastRecord).Error
+	if err != nil {
+		return LastRecord, err
+	}
+	return LastRecord, nil
+}
+
+// RealDeleteMsg 物理删除某条聊天记录
+func RealDeleteMsg(msgID string) error {
+	err := dao.DB.Where("msgid=?", msgID).Delete(&Message{}).Error
+	if err != nil {
+		return err
+	}
+	return nil
 }

@@ -1,8 +1,10 @@
 package controller
 
 import (
+	"chatApp_backend/common"
 	"chatApp_backend/model"
 	"github.com/gin-gonic/gin"
+	"log"
 	"net/http"
 	"sort"
 )
@@ -72,4 +74,47 @@ func GetMsgList(c *gin.Context) {
 			"data": reserveCurMsgList(curPageMsgList), // 因为排序是根据sendTime从大到小，而前端需要大的在最底部，所以reserve一下
 		})
 	}
+}
+
+func BothDelMsg(c *gin.Context) {
+	type WillDelMsgParams struct {
+		MsgID  string
+		ChatID string
+		Myself string
+		Other  string
+	}
+	var params WillDelMsgParams
+	c.ShouldBindJSON(&params)
+	err := model.RealDeleteMsg(params.MsgID)
+	if err != nil {
+		c.JSON(200, gin.H{
+			"code": 444,
+			"msg":  "撤回失败",
+			"data": "",
+		})
+		return
+	}
+	MineLastRecord, selectErr1 := model.SelectLastMsg(params.Myself, params.Other)
+	OtherLastRecord, selectErr2 := model.SelectLastMsg(params.Other, params.Myself)
+	if selectErr1 != nil {
+		log.Println("获取自己的最新消息失败")
+	}
+	if selectErr2 != nil {
+		log.Println("获取对方的最新消息失败")
+	}
+	if selectErr2 != nil && selectErr1 != nil {
+		return
+	}
+	var LastRecord model.Message
+	if MineLastRecord.MsgID == "" || MineLastRecord.SendTime < OtherLastRecord.SendTime {
+		LastRecord = OtherLastRecord
+	} else if OtherLastRecord.MsgID == "" || OtherLastRecord.SendTime < MineLastRecord.SendTime {
+		LastRecord = MineLastRecord
+	}
+	common.ModifyRecentMsg(params.ChatID, LastRecord)
+	c.JSON(200, gin.H{
+		"code": 200,
+		"msg":  "撤回成功",
+		"data": LastRecord,
+	})
 }
