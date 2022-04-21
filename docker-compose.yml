@@ -1,0 +1,41 @@
+version: '3'
+
+services:
+  chatFront:
+    image: fhw240579805/chat-front:v1.1.0
+    restart: always
+    ports:
+      - 4300:4300
+    networks:
+      - my-bridge
+
+  go:
+    image: fhw240579805/chat-back:v1.0.9
+    restart: always
+    links:
+      - mysql
+    volumes:
+      - /home/chat/chatImg:/static
+    ports:
+      - 9999:9999
+    networks:
+      - my-bridge
+
+  mysql:
+    image: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 12345678
+    volumes:
+      - mysql-data:/var/lib/mysql
+    ports:
+      - 3306:3306
+    networks:
+      - my-bridge
+
+volumes:
+  mysql-data:
+
+networks:
+  my-bridge:
+    driver: bridge
