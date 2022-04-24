@@ -1,23 +1,15 @@
 version: '3'
 
 services:
-  chatFront:
-    image: fhw240579805/chat-front:v1.1.0
-    restart: always
-    ports:
-      - 4300:4300
-    networks:
-      - my-bridge
-
   go:
-    image: fhw240579805/chat-back:v1.0.9
+    image: fhw240579805/chat-backend:v1.0.8
     restart: always
     links:
       - mysql
     volumes:
-      - /home/chat/chatImg:/static
+      - /home/chat/static:/dist/statics
     ports:
-      - 9999:9999
+      - 9998:9998
     networks:
       - my-bridge
 

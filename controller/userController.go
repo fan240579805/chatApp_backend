@@ -375,7 +375,7 @@ func SendVcode(c *gin.Context) {
 	// 新浪邮箱: SMTP服务器地址：smtp.sina.com（端口：25）
 
 	mailConf.SMTPAddr = `smtp.qq.com`
-	mailConf.SMTPPort = 25
+	mailConf.SMTPPort = 587
 
 	//产生六位数验证码
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
