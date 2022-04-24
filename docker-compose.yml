@@ -2,7 +2,7 @@ version: '3'
 
 services:
   go:
-    image: fhw240579805/chat-backend:v1.0.8
+    image: fhw240579805/chat-backend:v1.1.0
     restart: always
     links:
       - mysql

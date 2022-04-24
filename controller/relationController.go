@@ -92,6 +92,7 @@ func RejectFriendReq(c *gin.Context) {
 			"msg":  "拒绝成功",
 			"data": FormatFriendList(rightRelation.To, c),
 		})
+		rightRelation.Status = -2 // 告诉from被拒绝了
 		// pushFromUser 将新的好友列表推送给发起好友请求的FromUser
 		PushFriendReq2user(rightRelation, rightRelation.To, rightRelation.From)
 	}
@@ -166,7 +167,7 @@ func DeleteFriendReq(c *gin.Context) {
 
 // BothDelFriend 双方互删了 直接删除关系记录
 func BothDelFriend(c *gin.Context) {
-	curUser,_ := c.Get("userID")
+	curUser, _ := c.Get("userID")
 	var unknownRecord model.Relation
 	c.ShouldBindJSON(&unknownRecord)
 	rightRelation, _ := model.GetRightRelationRecord(unknownRecord.From, unknownRecord.To)
@@ -357,6 +358,18 @@ func CanIChat(c *gin.Context) {
 				"msg":  "已删除对方，无法发送",
 				"data": false,
 			})
+		} else if rightRelation.Status == 3 {
+			c.JSON(http.StatusOK, gin.H{
+				"code": 200,
+				"msg":  "已被删除，无法发送",
+				"data": false,
+			})
+		} else if rightRelation.Status == 5 {
+			c.JSON(http.StatusOK, gin.H{
+				"code": 200,
+				"msg":  "已被拉黑，无法发送",
+				"data": false,
+			})
 		} else {
 			c.JSON(http.StatusOK, gin.H{
 				"code": 200,
@@ -364,16 +377,28 @@ func CanIChat(c *gin.Context) {
 				"data": true,
 			})
 		}
-	} else {
+	} else if FromID == rightRelation.To {
 		// 此时查询是否拉黑对方的user在relation中是接受方，所以查询是否为5
 		if rightRelation.Status == 5 {
 			// 当前用户确实拉黑了对方
 			c.JSON(http.StatusOK, gin.H{
 				"code": 200,
-				"msg":  "已被拉黑，无法发送",
+				"msg":  "已拉黑对方，无法发送",
 				"data": false,
 			})
 		} else if rightRelation.Status == 3 {
+			c.JSON(http.StatusOK, gin.H{
+				"code": 200,
+				"msg":  "已删除对方，无法发送",
+				"data": false,
+			})
+		} else if rightRelation.Status == 4 {
+			c.JSON(http.StatusOK, gin.H{
+				"code": 200,
+				"msg":  "已被拉黑，无法发送",
+				"data": false,
+			})
+		} else if rightRelation.Status == 2 {
 			c.JSON(http.StatusOK, gin.H{
 				"code": 200,
 				"msg":  "已被删除，无法发送",

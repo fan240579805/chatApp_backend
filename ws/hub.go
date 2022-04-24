@@ -196,7 +196,7 @@ func ExitChatRoom(c *gin.Context) {
 	uid, _ := c.Get("userID")
 	var chatRoomParams ChatRoomType
 	c.ShouldBindJSON(&chatRoomParams)
-	Manager.Clients[uid.(string)].CurChatID = chatRoomParams.ChatID
+	Manager.Clients[uid.(string)].CurChatID = ""
 	c.JSON(http.StatusOK, gin.H{
 		"code": 200,
 		"msg":  "",
