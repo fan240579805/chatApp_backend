@@ -53,7 +53,8 @@ func GetMsgList(c *gin.Context) {
 		page := params.PageIndex
 		var startIndex = page * onePageCnt
 		var endIndex = (page + 1) * onePageCnt
-		if startIndex > len(messageList)-1 {
+		var msgLen = len(messageList)
+		if startIndex > msgLen-1 {
 			// 没有聊天记录数据了
 			c.JSON(http.StatusOK, gin.H{
 				"code": 2333,
@@ -63,8 +64,8 @@ func GetMsgList(c *gin.Context) {
 			return
 		}
 
-		if endIndex >= len(messageList)-1 {
-			endIndex = len(messageList) - 1
+		if endIndex >= msgLen {
+			endIndex = msgLen
 		}
 		// 分页获取聊天记录，每页20
 		curPageMsgList := messageList[startIndex:endIndex]
